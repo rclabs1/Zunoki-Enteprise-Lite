@@ -1,0 +1,321 @@
+// lib/google-ads-analytics-service.ts
+import { google } from 'googleapis'
+import { OAuth2Client } from 'google-auth-library'
+import { GoogleAdsApi, GoogleAdsServiceClient } from 'google-ads-api' // Placeholder for Google Ads API client
+import { BetaAnalyticsDataClient } from '@google-analytics/data' // Google Analytics Data API (GA4) client
+import { supabase } from './supabase-campaign-service'
+
+interface GoogleTokens {
+  access_token: string
+  refresh_token?: string
+  expiry_date?: number
+  scope?: string
+  token_type?: string
+  id_token?: string
+}
+
+interface AudienceInsight {
+  platform: string
+  segment_name: string
+  segment_type?: string
+  description?: string
+  size?: number
+  data?: any
+}
+
+export const googleAdsAnalyticsService = {
+  async getOAuth2Client(userId: string): Promise<OAuth2Client> {
+    // TODO: Fetch tokens for the given userId from user_tokens table
+    // For now, we'll use placeholder values or assume tokens are available
+    const { data: tokens, error } = await supabase
+      .from('user_tokens')
+      .select('access_token, refresh_token, expires_at, scope')
+      .eq('user_id', userId)
+      .eq('platform', 'google')
+      .single()
+
+    if (error || !tokens) {
+      throw new Error('Google tokens not found for user')
+    }
+
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI,
+    )
+
+    oauth2Client.setCredentials({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expiry_date: tokens.expires_at ? new Date(tokens.expires_at).getTime() : undefined,
+      scope: tokens.scope,
+    })
+
+    // Implement token refresh logic here if token is expired
+    if (tokens.expires_at && new Date(tokens.expires_at).getTime() < Date.now() + 60 * 1000) { // Refresh if expired or expiring within 1 minute
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken()
+        // Update tokens in Supabase
+        const { error: updateError } = await supabase
+          .from('user_tokens')
+          .update({
+            access_token: credentials.access_token,
+            expires_at: credentials.expiry_date ? new Date(credentials.expiry_date).toISOString() : null,
+            refresh_token: credentials.refresh_token || tokens.refresh_token, // Keep old refresh token if new one not provided
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId)
+          .eq('platform', 'google')
+
+        if (updateError) {
+          console.error('Error updating refreshed Google tokens in Supabase:', updateError)
+          throw updateError
+        }
+        console.log('Google access token refreshed and updated for user:', userId)
+      } catch (refreshError: any) {
+        console.error('Error refreshing Google access token for user:', userId, refreshError)
+        // If refresh fails, invalidate the token and force re-authentication
+        await supabase.from('user_tokens').delete().eq('user_id', userId).eq('platform', 'google')
+        throw new Error('Failed to refresh Google token. Please re-authenticate.')
+      }
+    }
+
+    return oauth2Client
+  },
+
+  async fetchGoogleAdsAudienceInsights(userId: string): Promise<AudienceInsight[]> {
+    const oauth2Client = await this.getOAuth2Client(userId)
+    const googleAdsClient = new GoogleAdsServiceClient({ credentials: oauth2Client.credentials })
+
+    console.log('Fetching Google Ads audience insights for user:', userId)
+
+    try {
+      const { customerIds } = await googleAdsClient.listAccessibleCustomers()
+      const insights: AudienceInsight[] = []
+
+      if (customerIds && customerIds.length > 0) {
+        const customerId = customerIds[0] // Use the first accessible customer ID
+
+        // Example GAQL query to get audience data from ad_group_audience_view
+        // This query fetches audience criteria (e.g., demographic, interest) performance.
+        const query = `
+          SELECT
+            ad_group_criterion.audience.id,
+            ad_group_criterion.audience.name,
+            ad_group_criterion.type,
+            metrics.impressions,
+            metrics.clicks,
+            metrics.conversions
+          FROM ad_group_criterion
+          WHERE
+            ad_group_criterion.type IN ('AUDIENCE', 'DEMOGRAPHIC_CRITERION', 'KEYWORD', 'PLACEMENT')
+            AND segments.date DURING LAST_30_DAYS
+          LIMIT 10
+        `
+
+        const [response] = await googleAdsClient.search({ customerId, query })
+
+        if (response.results) {
+          for (const row of response.results) {
+            const criterion = row.adGroupCriterion
+            if (criterion) {
+              let segmentName = 'Unknown Audience'
+              let segmentType = 'Unknown'
+              let description = ''
+
+              if (criterion.audience) {
+                segmentName = criterion.audience.name || `Audience ID: ${criterion.audience.id}`
+                segmentType = 'Audience'
+                description = `Google Ads Audience: ${segmentName}`
+              } else if (criterion.type === 'DEMOGRAPHIC_CRITERION') {
+                // You would parse specific demographic fields here (age_range, gender, etc.)
+                segmentName = `Demographic: ${criterion.type}`
+                segmentType = 'Demographic'
+                description = `Google Ads Demographic: ${segmentName}`
+              } else {
+                segmentName = `Criterion Type: ${criterion.type}`
+                segmentType = criterion.type
+                description = `Google Ads Criterion: ${segmentName}`
+              }
+
+              insights.push({
+                platform: 'google_ads',
+                segment_name: segmentName,
+                segment_type: segmentType,
+                description: description,
+                size: null, // Audience size is not directly available from this view
+                data: {
+                  impressions: row.metrics?.impressions,
+                  clicks: row.metrics?.clicks,
+                  conversions: row.metrics?.conversions,
+                  raw: row.toJSON(), // Store raw data for debugging/future use
+                },
+              })
+            }
+          }
+        }
+      } else {
+        console.log('No accessible Google Ads customers found for user:', userId)
+      }
+      return insights
+    } catch (error) {
+      console.error('Error fetching Google Ads audience insights:', error)
+      return []
+    }
+
+  },
+
+  async fetchGoogleAnalyticsAudienceInsights(userId: string): Promise<AudienceInsight[]> {
+    const oauth2Client = await this.getOAuth2Client(userId)
+    const analyticsDataClient = new BetaAnalyticsDataClient({ authClient: oauth2Client })
+
+    console.log('Fetching Google Analytics audience insights for user:', userId)
+
+    const propertyId = process.env.GA4_PROPERTY_ID
+    if (!propertyId) {
+      console.warn('GA4_PROPERTY_ID is not set in environment variables. Skipping Google Analytics data fetch.')
+      return []
+    }
+
+    const insights: AudienceInsight[] = []
+
+    try {
+      // Fetch active users by Age Bracket
+      const [ageResponse] = await analyticsDataClient.runReport({
+        property: `properties/${propertyId}`,
+        dimensions: [{
+          name: 'userAgeBracket',
+        }],
+        metrics: [{
+          name: 'activeUsers',
+        }],
+        dateRanges: [{
+          startDate: '30daysAgo',
+          endDate: 'today',
+        }],
+      })
+
+      ageResponse.rows?.forEach(row => {
+        const ageBracket = row.dimensionValues?.[0]?.value || 'unknown'
+        const activeUsers = parseInt(row.metricValues?.[0]?.value || '0')
+        if (ageBracket !== '(not set)') { // Filter out unset values
+          insights.push({
+            platform: 'google_analytics',
+            segment_name: `GA4 Users: Age ${ageBracket}`,
+            segment_type: 'Age Bracket',
+            description: `Active users in age bracket ${ageBracket} from GA4`,
+            size: activeUsers,
+            data: { ageBracket, activeUsers },
+          })
+        }
+      })
+
+      // Fetch active users by Gender
+      const [genderResponse] = await analyticsDataClient.runReport({
+        property: `properties/${propertyId}`,
+        dimensions: [{
+          name: 'userGender',
+        }],
+        metrics: [{
+          name: 'activeUsers',
+        }],
+        dateRanges: [{
+          startDate: '30daysAgo',
+          endDate: 'today',
+        }],
+      })
+
+      genderResponse.rows?.forEach(row => {
+        const gender = row.dimensionValues?.[0]?.value || 'unknown'
+        const activeUsers = parseInt(row.metricValues?.[0]?.value || '0')
+        if (gender !== '(not set)') { // Filter out unset values
+          insights.push({
+            platform: 'google_analytics',
+            segment_name: `GA4 Users: Gender ${gender}`,
+            segment_type: 'Gender',
+            description: `Active users of gender ${gender} from GA4`,
+            size: activeUsers,
+            data: { gender, activeUsers },
+          })
+        }
+      })
+
+      return insights
+    } catch (error) {
+      console.error('Error fetching Google Analytics audience insights:', error)
+      return []
+    }
+  },
+
+  async storeAudienceInsights(userId: string, insights: AudienceInsight[]): Promise<void> {
+    const insightsToStore = insights.map(insight => ({
+      user_id: userId,
+      platform: insight.platform,
+      segment_name: insight.segment_name,
+      segment_type: insight.segment_type,
+      description: insight.description,
+      size: insight.size,
+      data: insight.data,
+      date: new Date().toISOString().split('T')[0], // Store current date as YYYY-MM-DD
+    }))
+
+    const { error } = await supabase.from('user_audience_insights').upsert(insightsToStore, { onConflict: 'user_id, platform, segment_name, date' })
+
+    if (error) {
+      console.error('Error storing audience insights:', error)
+      throw error
+    }
+    console.log('Audience insights stored successfully for user:', userId)
+  },
+
+  async syncGoogleData(userId: string): Promise<void> {
+    console.log('Starting Google data sync for user:', userId)
+    try {
+      // Check if a Google token already exists for this user
+      const { data: existingToken, error: tokenError } = await supabase
+        .from('user_tokens')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('platform', 'google')
+        .single()
+
+      // If no existing token, it's a first-time connection, so delete any dummy data
+      // PGRST116 is the error code for "no rows found" from Supabase postgrest
+      if (!existingToken && tokenError && tokenError.code === 'PGRST116') {
+        console.log('First-time Google connection for user:', userId, '. Deleting existing dummy insights.')
+        const { error: deleteAdsError } = await supabase
+          .from('user_audience_insights')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform', 'google_ads')
+        if (deleteAdsError) {
+          console.error('Error deleting old Google Ads insights:', deleteAdsError)
+          throw deleteAdsError
+        }
+
+        const { error: deleteAnalyticsError } = await supabase
+          .from('user_audience_insights')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform', 'google_analytics')
+        if (deleteAnalyticsError) {
+          console.error('Error deleting old Google Analytics insights:', deleteAnalyticsError)
+          throw deleteAnalyticsError
+        }
+      } else if (tokenError) {
+        // Handle other potential errors when checking for token
+        console.error('Error checking for existing Google token:', tokenError)
+        throw tokenError
+      }
+
+      const adsInsights = await this.fetchGoogleAdsAudienceInsights(userId)
+      const analyticsInsights = await this.fetchGoogleAnalyticsAudienceInsights(userId)
+      const allInsights = [...adsInsights, ...analyticsInsights]
+      await this.storeAudienceInsights(userId, allInsights)
+      console.log('Google data sync completed for user:', userId)
+    } catch (error) {
+      console.error('Error during Google data sync for user:', userId, error)
+      throw error
+    }
+  },
+}

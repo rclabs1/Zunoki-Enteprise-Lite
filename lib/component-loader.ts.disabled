@@ -1,0 +1,82 @@
+// Performance-optimized component loader
+import dynamic from 'next/dynamic';
+import { ComponentType } from 'react';
+
+// Loading component for better UX
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-[200px]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#e50914]"></div>
+  </div>
+);
+
+// Lazy load heavy components with loading states
+export const DynamicModularPerformancePanels = dynamic(
+  () => import('@/components/modular-performance-panels'),
+  {
+    loading: LoadingSpinner,
+    ssr: false, // Disable SSR for heavy charts
+  }
+);
+
+export const DynamicAttributionHeatmap = dynamic(
+  () => import('@/components/attribution-heatmap'),
+  {
+    loading: LoadingSpinner,
+    ssr: false,
+  }
+);
+
+export const DynamicSmartAutomation = dynamic(
+  () => import('@/components/SmartAutomation'),
+  {
+    loading: LoadingSpinner,
+    ssr: false,
+  }
+);
+
+export const DynamicMarketplaceDetailModal = dynamic(
+  () => import('@/components/marketplace-detail-modal'),
+  {
+    loading: () => null, // No loading for modals
+    ssr: false,
+  }
+);
+
+// Chart components (heavy recharts library)
+export const DynamicBarChart = dynamic(
+  () => import('@/components/ui/chart').then((mod) => ({ default: mod.BarChart })),
+  {
+    loading: LoadingSpinner,
+    ssr: false,
+  }
+);
+
+export const DynamicLineChart = dynamic(
+  () => import('@/components/ui/chart').then((mod) => ({ default: mod.LineChart })),
+  {
+    loading: LoadingSpinner,
+    ssr: false,
+  }
+);
+
+export const DynamicPieChart = dynamic(
+  () => import('@/components/ui/chart').then((mod) => ({ default: mod.PieChart })),
+  {
+    loading: LoadingSpinner,
+    ssr: false,
+  }
+);
+
+// Utility function to create optimized dynamic imports
+export function createDynamicComponent<T>(
+  importFn: () => Promise<{ default: ComponentType<T> }>,
+  options: {
+    loading?: ComponentType;
+    ssr?: boolean;
+  } = {}
+) {
+  return dynamic(importFn, {
+    loading: options.loading || LoadingSpinner,
+    ssr: options.ssr ?? true,
+  });
+}
