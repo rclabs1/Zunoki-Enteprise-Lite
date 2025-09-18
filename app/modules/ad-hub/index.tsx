@@ -860,21 +860,23 @@ export default function AdHubModule() {
         transition={{ delay: 0.4, duration: 0.8 }}
       >
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="flex flex-wrap justify-start gap-1">
-            {categories.map((category) => (
-              <TabsTrigger 
-                key={category.id} 
-                value={category.id} 
-                className="flex items-center gap-2 text-xs"
-              >
-                <span>{category.icon}</span>
-                <span>{category.label}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {category.count}
-                </Badge>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="overflow-x-auto pb-2">
+            <TabsList className="inline-flex gap-2 p-2 bg-card min-h-fit w-max">
+              {categories.map((category) => (
+                <TabsTrigger
+                  key={category.id}
+                  value={category.id}
+                  className="flex items-center gap-2 text-sm px-3 py-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted/50 transition-all duration-200 shrink-0"
+                >
+                  <span className="text-base">{category.icon}</span>
+                  <span className="font-medium">{category.label}</span>
+                  <Badge variant="secondary" className="text-xs bg-muted-foreground/10 text-muted-foreground border-0">
+                    {category.count}
+                  </Badge>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <TabsContent value={selectedCategory} className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

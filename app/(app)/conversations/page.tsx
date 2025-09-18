@@ -710,7 +710,7 @@ export default function ConversationsModule() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center">
                 <MessageCircle className="h-5 w-5 mr-2" />
-                Conversations
+                Inbox
               </h2>
               <Badge variant="secondary">{conversations.length}</Badge>
             </div>
@@ -720,7 +720,7 @@ export default function ConversationsModule() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder="Search inbox..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -1076,7 +1076,7 @@ export default function ConversationsModule() {
                 <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium">Select a Conversation</h3>
                 <p className="text-muted-foreground">
-                  Choose a conversation from the sidebar to start messaging
+                  Choose a conversation from your inbox to start messaging
                 </p>
               </div>
             </div>

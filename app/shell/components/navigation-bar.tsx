@@ -36,9 +36,9 @@ export function NavigationBar({ currentModule, onModuleSelect }: NavigationBarPr
 
   const modules = [
     { id: 'maya-intelligence', label: 'Zunoki Intelligence', icon: '🧠', description: 'AI-Powered Intelligent Analytics' },
-    { id: 'conversations', label: 'Conversations', icon: '💬', description: 'Live Messages' },
+    { id: 'conversations', label: 'Inbox', icon: '💬', description: 'Unified Inbox' },
     { id: 'campaigns', label: 'Broadcasts', icon: '📱', description: 'Message Campaigns' },
-    { id: 'platforms', label: 'Platforms', icon: '🔗', description: 'Connect Messaging Platforms' },
+    { id: 'platforms', label: 'Connect Platforms', icon: '🔗', description: 'Connect Messaging Platforms' },
     { id: 'ad-hub', label: 'Ad Hub', icon: '📺', description: 'Connect & Analyze Ad Platforms' },
     { id: 'marketplace', label: 'Marketplace', icon: '🛒', description: 'Agent Marketplace' },
     { id: 'agent-builder', label: 'Builder', icon: '🔧', description: 'Classic Agent Builder' },

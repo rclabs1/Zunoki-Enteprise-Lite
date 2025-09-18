@@ -98,6 +98,7 @@ function handleNoTenantRouting(request: NextRequest) {
     '/select-organization',
     '/shell', // Allow shell route - OnboardingGuard handles auth
     '/connect-messaging', // Allow connect messaging page
+    '/connect-platforms', // Allow connect platforms page
   ];
 
   if (publicPaths.includes(pathname) || pathname.startsWith('/auth/') || pathname.startsWith('/onboarding/') || pathname.startsWith('/org/') || pathname.startsWith('/invite/')) {

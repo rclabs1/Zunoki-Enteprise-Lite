@@ -54,6 +54,17 @@ interface MessagingPlatform {
 
 const platforms: MessagingPlatform[] = [
   {
+    id: 'website-chat',
+    name: 'AI-Powered Chat Widget',
+    description: 'AI-powered website chat widget for instant customer engagement and conversions',
+    icon: <Bot className="h-6 w-6" />,
+    available: true,
+    features: ['AI conversations', 'Lead capture', 'Real-time chat', 'Analytics'],
+    setupComplexity: 'Easy',
+    category: 'business',
+    color: 'bg-primary',
+  },
+  {
     id: 'whatsapp',
     name: 'WhatsApp Business',
     description: 'Connect with customers via WhatsApp messaging',
@@ -181,14 +192,14 @@ const platforms: MessagingPlatform[] = [
     color: 'bg-blue-700'
   },
   {
-    id: 'website-chat',
-    name: 'Website Chat',
-    description: 'Add live chat widget to your website',
-    icon: <Globe className="h-6 w-6" />,
+    id: 'custom-email',
+    name: 'Custom Email',
+    description: 'Connect any custom email provider via SMTP/IMAP',
+    icon: <Mail className="h-6 w-6" />,
     available: true,
-    features: ['Live chat widget', 'Visitor tracking', 'Proactive messages', 'File sharing'],
-    setupComplexity: 'Easy',
-    category: 'business',
+    features: ['SMTP/IMAP support', 'Custom domains', 'Advanced routing', 'Email automation'],
+    setupComplexity: 'Medium',
+    category: 'email',
     color: 'bg-gray-600'
   }
 ];
@@ -480,7 +491,7 @@ export default function MessagingModule() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Messaging Platforms</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Connect Platforms</h1>
         <p className="text-gray-600">
           Connect your messaging platforms to enable unified customer communications
         </p>

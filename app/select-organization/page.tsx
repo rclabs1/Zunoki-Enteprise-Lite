@@ -75,8 +75,13 @@ export default function SelectOrganizationPage() {
   }, [user, authLoading, router]);
 
   const handleSelectOrganization = (org: OrganizationWithRole) => {
-    // Redirect to organization dashboard using organization ID
-    router.push(`/org/${org.id}/dashboard`);
+    // Redirect to organization shell with proper context
+    router.push(`/shell?org=${org.id}`);
+  };
+
+  const handleAccessDashboard = (org: OrganizationWithRole) => {
+    // Direct access to shell dashboard
+    router.push(`/shell?org=${org.id}`);
   };
 
   const handleCreateOrganization = () => {
@@ -320,7 +325,7 @@ export default function SelectOrganizationPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSelectOrganization(org);
+                      handleAccessDashboard(org);
                     }}
                     className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors"
                   >

@@ -614,9 +614,9 @@ export default function ConnectWhatsAppPage() {
                       <div className="flex items-center gap-3">
                         <Users className="h-8 w-8 text-blue-500" />
                         <div>
-                          <h4 className="font-semibold">Customer Conversations</h4>
+                          <h4 className="font-semibold">Unified Inbox</h4>
                           <p className="text-sm text-muted-foreground">
-                            All WhatsApp messages will appear in your conversations inbox
+                            All multi-platform messages will appear in your unified inbox
                           </p>
                         </div>
                       </div>

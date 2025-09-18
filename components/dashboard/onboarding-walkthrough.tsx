@@ -59,34 +59,34 @@ const onboardingSteps: OnboardingStep[] = [
             <Sparkles className="h-12 w-12 text-purple-600" />
           </div>
           <h3 className="text-xl font-bold text-gray-800 mb-2">
-            Your Unified Marketing Platform
+            Zunoki Enterprise
           </h3>
           <p className="text-gray-600 leading-relaxed">
-            Zunoki connects WhatsApp Business, Gmail, Telegram, and SMS into one powerful AI-driven platform. 
-            Let's explore the features that will streamline your customer communications.
+            Zunoki Enterprise connects WhatsApp Business, Gmail, Telegram, and SMS into one powerful AI-driven platform.
+            Let's explore the enterprise features that will transform your customer communications and business operations.
           </p>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-white/20 rounded-lg border border-gray-300">
-            <Target className="h-6 w-6 text-blue-600 mb-2" />
-            <h4 className="font-medium text-gray-800 mb-1">WhatsApp Business</h4>
-            <p className="text-xs text-gray-600">Automated conversations and support</p>
+            <Users className="h-6 w-6 text-purple-600 mb-2" />
+            <h4 className="font-medium text-gray-800 mb-1">AI Conversations</h4>
+            <p className="text-xs text-gray-600">AI-powered chat enablement to conversion</p>
           </div>
           <div className="p-4 bg-white/20 rounded-lg border border-gray-300">
             <TrendingUp className="h-6 w-6 text-emerald-600 mb-2" />
             <h4 className="font-medium text-gray-800 mb-1">Multi-Platform Messaging</h4>
-            <p className="text-xs text-gray-600">Gmail, Telegram, SMS in one place</p>
-          </div>
-          <div className="p-4 bg-white/20 rounded-lg border border-gray-300">
-            <Users className="h-6 w-6 text-purple-600 mb-2" />
-            <h4 className="font-medium text-gray-800 mb-1">AI Conversations</h4>
-            <p className="text-xs text-gray-600">Smart automated responses</p>
+            <p className="text-xs text-gray-600">WhatsApp Business, Gmail, Telegram, SMS in one place</p>
           </div>
           <div className="p-4 bg-white/20 rounded-lg border border-gray-300">
             <Zap className="h-6 w-6 text-orange-600 mb-2" />
             <h4 className="font-medium text-gray-800 mb-1">Business Intelligence</h4>
-            <p className="text-xs text-gray-600">Analytics and insights dashboard</p>
+            <p className="text-xs text-gray-600">Enterprise analytics and advanced insights dashboard</p>
+          </div>
+          <div className="p-4 bg-white/20 rounded-lg border border-gray-300">
+            <Target className="h-6 w-6 text-blue-600 mb-2" />
+            <h4 className="font-medium text-gray-800 mb-1">Enterprise Automation</h4>
+            <p className="text-xs text-gray-600">Advanced workflow and process automation</p>
           </div>
         </div>
       </div>
@@ -106,14 +106,15 @@ const onboardingSteps: OnboardingStep[] = [
             <Zap className="h-8 w-8 text-blue-600" />
           </div>
           <p className="text-gray-700">
-            Connect your business messaging platforms to enable Zunoki's AI automation. 
-            The more platforms you connect, the more unified your customer communications become.
+            Connect your business messaging platforms to enable Zunoki Enterprise's AI automation.
+            The more platforms you connect, the more unified and powerful your enterprise communications become.
           </p>
         </div>
         
         <div className="space-y-3">
           {[
-            { name: "WhatsApp Business", icon: "💬", status: "connected", data: "Customer conversations and support" },
+            { name: "AI Powered Chat Widget", icon: "💬", status: "connected", data: "AI-powered website chat for conversions" },
+            { name: "WhatsApp Business", icon: "📱", status: "connected", data: "Customer conversations and support" },
             { name: "Gmail Integration", icon: "📧", status: "connected", data: "Email marketing and automation" },
             { name: "Telegram Bot", icon: "📱", status: "available", data: "Telegram messaging and groups" },
             { name: "SMS Gateway", icon: "📨", status: "available", data: "SMS campaigns and notifications" }
@@ -170,8 +171,8 @@ const onboardingSteps: OnboardingStep[] = [
             <BarChart3 className="h-8 w-8 text-emerald-600" />
           </div>
           <p className="text-gray-700">
-            Your dashboard shows real-time conversation metrics across all connected platforms. 
-            Zunoki automatically tracks customer interactions and response patterns.
+            Your enterprise dashboard features a unified inbox that consolidates all conversations from connected platforms.
+            Zunoki Enterprise automatically tracks customer interactions, response patterns, chat-to-conversion metrics, and business performance data in real-time.
           </p>
         </div>
         
@@ -192,7 +193,11 @@ const onboardingSteps: OnboardingStep[] = [
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm text-gray-800">Conversions</span>
+                <span className="text-sm text-gray-800">Chat-to-Conversion Rate</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="text-sm text-gray-800">Unified Inbox Activity</span>
               </div>
             </div>
             
@@ -208,6 +213,10 @@ const onboardingSteps: OnboardingStep[] = [
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
                 <span className="text-sm text-gray-800">Active Conversations</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm text-gray-800">Conversion Value</span>
               </div>
             </div>
           </div>
@@ -242,8 +251,8 @@ const onboardingSteps: OnboardingStep[] = [
             <Lightbulb className="h-8 w-8 text-purple-600" />
           </div>
           <p className="text-gray-700">
-            Zunoki continuously learns from your conversations and suggests optimal responses. 
-            Each suggestion is tailored to your business tone and customer context.
+            Zunoki Enterprise continuously learns from your conversations and suggests optimal responses.
+            Each suggestion is tailored to your enterprise business tone and customer context.
           </p>
         </div>
         
@@ -313,8 +322,8 @@ const onboardingSteps: OnboardingStep[] = [
             <Settings className="h-8 w-8 text-yellow-600" />
           </div>
           <p className="text-gray-700">
-            Zunoki's Smart Automation can handle customer conversations 24/7, providing 
-            instant responses and routing complex queries to your team.
+            Zunoki Enterprise's Smart Automation can handle customer conversations 24/7, providing
+            instant responses and routing complex queries to your enterprise team with advanced workflow capabilities.
           </p>
         </div>
         
@@ -452,7 +461,7 @@ export default function OnboardingWalkthrough({
             </motion.div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">You're All Set!</h3>
             <p className="text-gray-700 mb-6">
-              Welcome to Zunoki! Start exploring your unified marketing automation platform.
+              Welcome to Zunoki Enterprise! Start exploring your unified enterprise marketing automation platform.
             </p>
             <Button
               onClick={onClose}

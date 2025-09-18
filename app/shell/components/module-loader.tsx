@@ -31,6 +31,7 @@ const MarketplacePage = lazy(() => import('../../marketplace/page'))
 const AgentBuilderPage = lazy(() => import('../../agent-builder/page'))
 const MayaIntelligenceModule = lazy(() => import('../../modules/maya-intelligence/index'))
 const MessagingModule = lazy(() => import('../../modules/messaging/index'))
+const ConnectPlatformsPage = lazy(() => import('../../connect-platforms/page'))
 
 interface ModuleLoaderProps {
   currentModule: string | null
@@ -528,6 +529,7 @@ export function ModuleLoader({ currentModule }: ModuleLoaderProps) {
       case 'automation':
         return <AutomationModule />
       case 'platforms':
+        return <ConnectPlatformsPage />
       case 'messaging':
         return <MessagingModule />
       case 'ad-hub':
