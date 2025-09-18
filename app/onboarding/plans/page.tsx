@@ -1,5 +1,7 @@
 'use client'
 
+console.log('🚨 PLANS PAGE MODULE LOADED - This should show in console')
+
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,63 +12,65 @@ import { CheckCircle, Zap, Users, Sparkles, ArrowRight, Clock } from 'lucide-rea
 
 // Dynamic pricing configuration (easily updatable)
 const PRICING_CONFIG = {
-  starter: {
-    name: 'Starter',
+  chat: {
+    name: 'Zunoki Enterprise Lite (Chat)',
     price: 49,
     currency: 'USD',
     inrPrice: 4099,
-    popular: false,
-    description: 'Perfect for growing teams',
+    popular: true,
+    description: 'Chat-based customer engagement',
     icon: Users,
+    paymentEnabled: true,
     features: [
       'WhatsApp Business integration',
       'Gmail & Telegram support',
       'SMS messaging included',
       'Zunoki Agentic AI assistant',
-      'Basic voice features',
+      'Chat-based interactions',
       'Credit-based messaging per month',
       '3 platform connections',
       'Email support'
     ]
   },
-  business: {
-    name: 'Business',
-    price: 129,
+  voice: {
+    name: 'Zunoki Enterprise Lite (Voice)',
+    price: null,
     currency: 'USD',
-    inrPrice: 10799,
-    popular: true,
-    description: 'Most popular for growing businesses',
+    inrPrice: null,
+    popular: false,
+    description: 'Voice-enabled customer engagement',
     icon: Zap,
+    paymentEnabled: false,
+    contactSales: true,
     features: [
-      'All Starter features',
-      'Google Ads integration',
-      'Google Analytics tracking',
-      'Mixpanel insights',
-      'Premium voice synthesis',
-      'Natural language business intelligence',
-      'AI agents',
-      '2x-3x Starter messaging credits',
-      '5 platform connections',
-      'Priority chat support',
-      'Advanced automation'
+      'All Chat features',
+      'Voice call integration',
+      'AI voice synthesis',
+      'Voice analytics',
+      'Premium voice features',
+      'Voice-based AI interactions',
+      'Advanced voice automation',
+      'Priority voice support'
     ]
   },
-  enterprise: {
-    name: 'Enterprise',
-    price: 299,
+  full: {
+    name: 'Enterprise Full',
+    price: null,
     currency: 'USD',
-    inrPrice: 25099,
+    inrPrice: null,
     popular: false,
-    description: 'Custom solutions for enterprises',
+    description: 'Complete enterprise solution',
     icon: Sparkles,
+    paymentEnabled: false,
+    contactSales: true,
     features: [
-      'All Business features',
+      'All Voice features',
       'Custom platform connections',
       'Meta (Facebook/Instagram) integration',
       'Custom voice training',
-      'Voice-narrated chart insights (industry first!)',
+      'Voice-narrated chart insights',
       'Custom AI agents',
-      'Custom messaging limits',
+      'Unlimited messaging',
       'Dedicated success manager',
       'White-glove onboarding',
       'Custom integrations',
@@ -113,22 +117,31 @@ const PlanCard: React.FC<PlanCardProps> = ({ planKey, plan, isSelected, onSelect
         <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
         
         <div className="mt-4">
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-3xl font-bold text-blue-600">
-              ${getPlanPricing(planKey).price}
-            </span>
-            <span className="text-muted-foreground">/month</span>
-          </div>
-          <p className="text-sm text-gray-600 mt-1">
-            ₹{getPlanPricing(planKey).inrPrice.toLocaleString()}/month
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {isAnnual ? (
-              'billed annually'
-            ) : (
-              <>Save ${getPlanPricing(planKey).savings} with annual billing</>
-            )}
-          </p>
+          {plan.contactSales ? (
+            <div className="text-center">
+              <span className="text-3xl font-bold text-blue-600">Contact Sales</span>
+              <p className="text-sm text-gray-600 mt-1">Custom pricing available</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-3xl font-bold text-blue-600">
+                  ${getPlanPricing(planKey).price}
+                </span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                ₹{getPlanPricing(planKey).inrPrice.toLocaleString()}/month
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isAnnual ? (
+                  'billed annually'
+                ) : (
+                  <>Save ${getPlanPricing(planKey).savings} with annual billing</>
+                )}
+              </p>
+            </>
+          )}
         </div>
       </CardHeader>
       
@@ -152,7 +165,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ planKey, plan, isSelected, onSelect
           }`}
           size="lg"
         >
-          {isSelected ? 'Selected' : 'Get Started'}
+          {isSelected ? 'Selected' : plan.contactSales ? 'Contact Sales' : 'Get Started'}
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </CardContent>
@@ -163,38 +176,85 @@ const PlanCard: React.FC<PlanCardProps> = ({ planKey, plan, isSelected, onSelect
 export default function PlansPage() {
   console.log('📋 PlansPage - Component loaded')
   const router = useRouter()
-  const { user } = useAuth()
-  const [selectedPlan, setSelectedPlan] = useState<string>('business') // Default to most popular
+  const { user, loading } = useAuth()
+  const [selectedPlan, setSelectedPlan] = useState<string>('chat') // Default to chat plan
   const [timeLeft, setTimeLeft] = useState('47 hours')
   const [isAnnual, setIsAnnual] = useState(true) // Default to annual
-  
-  console.log('📋 PlansPage - User state:', { user: !!user, email: user?.email })
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true)
+
+  console.log('📋 PlansPage - Auth state:', { user: !!user, email: user?.email, loading })
 
   useEffect(() => {
+    console.log('📋 PlansPage - useEffect triggered:', { user: !!user, loading })
+
+    // Wait for auth to finish loading
+    if (loading) {
+      console.log('📋 PlansPage - Auth still loading, waiting...')
+      return
+    }
+
     if (!user) {
+      console.log('📋 PlansPage - No user after loading, redirecting to signup')
       router.push('/signup')
       return
     }
 
-    // Check if user has already paid - if so, redirect to main app
+    console.log('📋 PlansPage - User authenticated, checking payment status for:', user.email)
+
+    // Check if user has already paid - if so, redirect to main app immediately
     // This prevents paid users from accessing the onboarding plans page
     const checkPaymentStatus = async () => {
       try {
+        console.log('🔍 PLANS PAGE - Starting payment status check for:', user.email)
         const response = await fetch('/api/user/subscription-status', {
           headers: {
             'Authorization': `Bearer ${await user.getIdToken()}`
           }
         })
+
         if (response.ok) {
           const data = await response.json()
-          if (data.hasPaidSubscription) {
-            console.log('🔒 User already has paid subscription, redirecting to setup')
-            router.push('/onboarding/setup')
+          console.log('🔍 PLANS PAGE - Full API response:', JSON.stringify(data, null, 2))
+
+          console.log('🔍 PLANS PAGE - Detailed analysis:', {
+            hasPaidSubscription: data.hasPaidSubscription,
+            success: data.success,
+            organizationsExist: !!data.organizations,
+            organizationsLength: data.organizations?.length || 0,
+            firstOrgSlug: data.organizations?.[0]?.slug || 'undefined'
+          })
+
+          // CRITICAL FIX: If user has paid subscription, redirect immediately
+          if (data.hasPaidSubscription === true) {
+            console.log('🔒 PAID USER DETECTED - Redirecting immediately to prevent double payment')
+
+            // Check setup status before deciding where to redirect
+            const setupStatus = localStorage.getItem('setupStatus')
+            console.log('🔧 Plans page - Setup status:', setupStatus)
+
+            if (!setupStatus || setupStatus === 'pending') {
+              console.log('🚀 Redirecting to setup page (setup not completed)')
+              router.push('/onboarding/setup')
+            } else {
+              console.log('🚀 Setup completed, redirecting to app shell')
+              router.push('/shell')
+            }
             return
+          } else {
+            console.log('❌ User has no paid subscription, staying on plans page', {
+              hasPaidSubscription: data.hasPaidSubscription,
+              success: data.success
+            })
+            setIsCheckingSubscription(false)
           }
+        } else {
+          console.error('❌ API request failed:', response.status, response.statusText)
+          setIsCheckingSubscription(false)
         }
       } catch (error) {
+        console.error('⚠️ Error checking subscription status:', error)
         console.log('⚠️ Could not check subscription status, allowing access to plans')
+        setIsCheckingSubscription(false)
       }
     }
     
@@ -207,29 +267,51 @@ export default function PlansPage() {
     }, 60000) // Update every minute
 
     return () => clearInterval(timer)
-  }, [user, router])
+  }, [user, loading, router])
 
   const handlePlanSelect = (planKey: string) => {
     setSelectedPlan(planKey)
   }
 
   const handleContinue = () => {
+    if (!selectedPlan) return
+
+    const plan = PRICING_CONFIG[selectedPlan as keyof typeof PRICING_CONFIG]
+
+    // If it's a contact sales plan, open email instead of going to payment
+    if (plan.contactSales) {
+      handleContactSales()
+      return
+    }
+
     // Store selected plan in localStorage for payment page
     localStorage.setItem('selectedPlan', JSON.stringify({
       planKey: selectedPlan,
-      ...PRICING_CONFIG[selectedPlan as keyof typeof PRICING_CONFIG]
+      ...plan
     }))
-    
+
     router.push('/onboarding/payment')
   }
 
   const handleContactSales = () => {
-    window.open('mailto:sales@zunoki.com?subject=Enterprise Plan Inquiry', '_blank')
+    window.open('mailto:zunoki@zunoki.com?subject=Enterprise Plan Inquiry', '_blank')
   }
+
 
   // Dynamic pricing based on billing cycle
   const getPlanPricing = (planKey: string) => {
     const plan = PRICING_CONFIG[planKey as keyof typeof PRICING_CONFIG]
+
+    // Handle Contact Sales plans
+    if (plan.contactSales || !plan.price) {
+      return {
+        price: 0,
+        inrPrice: 0,
+        billing: 'contact',
+        savings: 0
+      }
+    }
+
     if (isAnnual) {
       return {
         price: plan.price,
@@ -239,7 +321,7 @@ export default function PlansPage() {
       }
     } else {
       // Monthly pricing (20-25% premium)
-      const monthlyMultiplier = planKey === 'starter' ? 1.20 : 1.23
+      const monthlyMultiplier = planKey === 'chat' ? 1.20 : 1.23
       const monthlyPrice = Math.round(plan.price * monthlyMultiplier)
       const monthlyInrPrice = Math.round(plan.inrPrice * monthlyMultiplier)
       const savings = (monthlyPrice * 12) - (plan.price * 12)
@@ -252,9 +334,26 @@ export default function PlansPage() {
     }
   }
 
+  if (loading) {
+    console.log('📋 PlansPage - Auth loading, showing loading...')
+    return <div className="flex justify-center items-center h-screen">Loading authentication...</div>
+  }
+
   if (!user) {
-    console.log('📋 PlansPage - No user, showing loading...')
-    return <div className="flex justify-center items-center h-screen">Loading...</div>
+    console.log('📋 PlansPage - No user after loading, should redirect...')
+    return <div className="flex justify-center items-center h-screen">Redirecting...</div>
+  }
+
+  if (isCheckingSubscription) {
+    console.log('📋 PlansPage - Checking subscription status...')
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Checking your subscription status...</p>
+        </div>
+      </div>
+    )
   }
   
   console.log('📋 PlansPage - Rendering plans for user:', user.email)
@@ -311,12 +410,13 @@ export default function PlansPage() {
           <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-6 py-3 rounded-full border border-orange-300 mb-8">
             <Clock className="w-5 h-5" />
             <span className="font-medium">
-              🎁 Special Launch Offer: First 3 months 50% OFF! 
+              🚀 Early Access: Join the AI Revolution Today! 
             </span>
             <Badge variant="destructive" className="ml-2">
               ⏰ {timeLeft} left
             </Badge>
           </div>
+
         </div>
 
         {/* Pricing Cards */}
@@ -365,7 +465,9 @@ export default function PlansPage() {
               className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-bold px-12 py-6 text-xl rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 group"
               disabled={!selectedPlan}
             >
-              Continue to Payment
+              {selectedPlan && PRICING_CONFIG[selectedPlan as keyof typeof PRICING_CONFIG]?.contactSales
+                ? 'Contact Sales'
+                : 'Continue to Payment'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
             

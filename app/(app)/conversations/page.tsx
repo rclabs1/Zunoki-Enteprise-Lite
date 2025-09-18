@@ -10,16 +10,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { 
-  MessageCircle, 
-  Send, 
-  Search, 
-  Filter, 
-  UserPlus, 
-  Bot, 
-  User, 
-  Clock, 
-  CheckCircle, 
+import {
+  MessageCircle,
+  Send,
+  Search,
+  Filter,
+  UserPlus,
+  Bot,
+  User,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Phone,
   MoreVertical,
@@ -27,7 +27,24 @@ import {
   Star,
   Flag,
   Users,
-  Zap
+  Zap,
+  Globe,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Brain,
+  TrendingUp,
+  Target,
+  ThumbsUp,
+  ThumbsDown,
+  Headphones,
+  Settings,
+  ArrowRight,
+  ChevronDown,
+  Loader,
+  Sparkles,
+  Shield,
+  Activity
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -45,22 +62,51 @@ interface Message {
   isFromAgent?: boolean
   agentName?: string
   status: 'sent' | 'delivered' | 'read'
-  type: 'text' | 'image' | 'document' | 'audio'
+  type: 'text' | 'image' | 'document' | 'audio' | 'ai_response' | 'system' | 'handoff'
+  aiAgent?: {
+    name: string
+    confidence: number
+    intent: string
+    suggestions?: string[]
+  }
+  channel: 'website' | 'whatsapp' | 'email' | 'sms' | 'telegram'
+  metadata?: {
+    pageUrl?: string
+    userAgent?: string
+    location?: string
+    sessionId?: string
+  }
 }
 
 interface Conversation {
   id: string
   contactName: string
   contactPhone: string
+  contactEmail?: string
   contactAvatar?: string
   lastMessage: string
   lastMessageTime: Date
   unreadCount: number
-  status: 'active' | 'waiting' | 'resolved' | 'archived'
+  status: 'active' | 'waiting' | 'resolved' | 'archived' | 'ai_handling'
   assignedAgent?: string
+  assignedAiAgent?: {
+    id: string
+    name: string
+    type: 'sales' | 'support' | 'technical' | 'general'
+    confidence: number
+    isActive: boolean
+  }
+  primaryChannel: 'website' | 'whatsapp' | 'email' | 'sms' | 'telegram'
+  availableChannels: string[]
   tags: string[]
-  priority: 'low' | 'medium' | 'high'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  leadScore?: number
+  intent?: string
+  sentiment?: 'positive' | 'neutral' | 'negative'
   messages: Message[]
+  aiSummary?: string
+  isAiActive: boolean
+  needsHumanReview: boolean
 }
 
 interface Agent {
@@ -69,6 +115,25 @@ interface Agent {
   avatar?: string
   status: 'online' | 'away' | 'busy' | 'offline'
   activeConversations: number
+  type: 'human' | 'ai'
+  capabilities?: string[]
+  specialization?: 'sales' | 'support' | 'technical' | 'general'
+  aiModel?: string
+  confidence?: number
+}
+
+interface AIAgent {
+  id: string
+  name: string
+  type: 'sales' | 'support' | 'technical' | 'general'
+  status: 'active' | 'training' | 'offline'
+  model: string
+  activeConversations: number
+  totalConversations: number
+  successRate: number
+  averageResponseTime: number
+  capabilities: string[]
+  intents: string[]
 }
 
 const mockConversations: Conversation[] = [
@@ -76,20 +141,75 @@ const mockConversations: Conversation[] = [
     id: '1',
     contactName: 'Sarah Johnson',
     contactPhone: '+1 (555) 123-4567',
-    lastMessage: 'Hi, I need help with my order status',
-    lastMessageTime: new Date(Date.now() - 5 * 60 * 1000),
-    unreadCount: 2,
-    status: 'waiting',
-    tags: ['support', 'order'],
+    contactEmail: 'sarah@example.com',
+    lastMessage: 'AI is helping me check your order status...',
+    lastMessageTime: new Date(Date.now() - 2 * 60 * 1000),
+    unreadCount: 0,
+    status: 'ai_handling',
+    assignedAiAgent: {
+      id: 'ai-support-1',
+      name: 'Support Pro',
+      type: 'support',
+      confidence: 94,
+      isActive: true
+    },
+    primaryChannel: 'website',
+    availableChannels: ['website', 'whatsapp', 'email'],
+    tags: ['support', 'order', 'high-value'],
     priority: 'high',
+    leadScore: 85,
+    intent: 'order_inquiry',
+    sentiment: 'neutral',
+    isAiActive: true,
+    needsHumanReview: false,
+    aiSummary: 'Customer inquiring about order #12345 status. Order found, shipping today.',
     messages: [
       {
         id: '1',
-        content: 'Hi, I need help with my order status',
+        content: 'Hi, I need help with my order #12345 status',
         timestamp: new Date(Date.now() - 5 * 60 * 1000),
         isIncoming: true,
         status: 'read',
-        type: 'text'
+        type: 'text',
+        channel: 'website',
+        metadata: {
+          pageUrl: 'https://example.com/account/orders',
+          sessionId: 'sess_abc123'
+        }
+      },
+      {
+        id: '2',
+        content: 'Hi Sarah! I\'d be happy to help you check on order #12345. Let me look that up for you right away.',
+        timestamp: new Date(Date.now() - 4 * 60 * 1000),
+        isIncoming: false,
+        isFromAgent: true,
+        agentName: 'Support Pro (AI)',
+        status: 'read',
+        type: 'ai_response',
+        channel: 'website',
+        aiAgent: {
+          name: 'Support Pro',
+          confidence: 96,
+          intent: 'order_inquiry',
+          suggestions: ['Check order status', 'Provide tracking info', 'Offer alternatives']
+        }
+      },
+      {
+        id: '3',
+        content: 'Great news! I found your order #12345. It was processed yesterday and is being shipped today via FedEx. You should receive tracking information within 2 hours.',
+        timestamp: new Date(Date.now() - 2 * 60 * 1000),
+        isIncoming: false,
+        isFromAgent: true,
+        agentName: 'Support Pro (AI)',
+        status: 'read',
+        type: 'ai_response',
+        channel: 'website',
+        aiAgent: {
+          name: 'Support Pro',
+          confidence: 98,
+          intent: 'order_status_update',
+          suggestions: ['Provide tracking link', 'Offer delivery options', 'Ask for feedback']
+        }
       }
     ]
   },
@@ -97,35 +217,188 @@ const mockConversations: Conversation[] = [
     id: '2',
     contactName: 'Mike Chen',
     contactPhone: '+1 (555) 987-6543',
-    lastMessage: 'Thank you for the quick response!',
-    lastMessageTime: new Date(Date.now() - 15 * 60 * 1000),
-    unreadCount: 0,
-    status: 'resolved',
-    assignedAgent: 'John Doe',
-    tags: ['resolved'],
-    priority: 'low',
-    messages: []
+    contactEmail: 'mike@techcorp.com',
+    lastMessage: 'Would you like me to connect you with our technical team?',
+    lastMessageTime: new Date(Date.now() - 8 * 60 * 1000),
+    unreadCount: 1,
+    status: 'waiting',
+    assignedAiAgent: {
+      id: 'ai-tech-1',
+      name: 'Tech Helper',
+      type: 'technical',
+      confidence: 72,
+      isActive: true
+    },
+    primaryChannel: 'whatsapp',
+    availableChannels: ['whatsapp', 'email'],
+    tags: ['technical', 'api'],
+    priority: 'medium',
+    leadScore: 92,
+    intent: 'technical_support',
+    sentiment: 'slightly_frustrated',
+    isAiActive: true,
+    needsHumanReview: true,
+    aiSummary: 'Technical issue with API integration. Complex query, may need human expert.',
+    messages: [
+      {
+        id: '1',
+        content: 'I\'m having trouble with the API integration. The webhook isn\'t firing properly.',
+        timestamp: new Date(Date.now() - 15 * 60 * 1000),
+        isIncoming: true,
+        status: 'read',
+        type: 'text',
+        channel: 'whatsapp'
+      },
+      {
+        id: '2',
+        content: 'I understand you\'re experiencing issues with webhook integration. This sounds like a technical setup issue. Would you like me to connect you with our technical team who can provide detailed API support?',
+        timestamp: new Date(Date.now() - 8 * 60 * 1000),
+        isIncoming: false,
+        isFromAgent: true,
+        agentName: 'Tech Helper (AI)',
+        status: 'delivered',
+        type: 'ai_response',
+        channel: 'whatsapp',
+        aiAgent: {
+          name: 'Tech Helper',
+          confidence: 72,
+          intent: 'technical_escalation',
+          suggestions: ['Escalate to human', 'Provide documentation', 'Schedule tech call']
+        }
+      }
+    ]
   },
   {
     id: '3',
     contactName: 'Emma Wilson',
     contactPhone: '+1 (555) 456-7890',
-    lastMessage: 'Can I schedule a demo?',
+    contactEmail: 'emma@startup.io',
+    lastMessage: 'Perfect! I\'ve scheduled a demo for Friday at 3 PM.',
     lastMessageTime: new Date(Date.now() - 30 * 60 * 1000),
-    unreadCount: 1,
-    status: 'active',
+    unreadCount: 0,
+    status: 'resolved',
     assignedAgent: 'Jane Smith',
-    tags: ['sales', 'demo'],
-    priority: 'medium',
+    assignedAiAgent: {
+      id: 'ai-sales-1',
+      name: 'Sales Pro',
+      type: 'sales',
+      confidence: 89,
+      isActive: false
+    },
+    primaryChannel: 'website',
+    availableChannels: ['website', 'email', 'whatsapp'],
+    tags: ['sales', 'demo', 'qualified'],
+    priority: 'high',
+    leadScore: 95,
+    intent: 'demo_request',
+    sentiment: 'positive',
+    isAiActive: false,
+    needsHumanReview: false,
+    aiSummary: 'Qualified lead, demo scheduled, high conversion probability.',
     messages: []
   }
 ]
 
 const mockAgents: Agent[] = [
-  { id: '1', name: 'John Doe', status: 'online', activeConversations: 3 },
-  { id: '2', name: 'Jane Smith', status: 'online', activeConversations: 2 },
-  { id: '3', name: 'Bob Wilson', status: 'away', activeConversations: 1 },
-  { id: '4', name: 'AI Assistant', status: 'online', activeConversations: 8 }
+  {
+    id: '1',
+    name: 'John Doe',
+    status: 'online',
+    activeConversations: 3,
+    type: 'human',
+    specialization: 'support'
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    status: 'online',
+    activeConversations: 2,
+    type: 'human',
+    specialization: 'sales'
+  },
+  {
+    id: '3',
+    name: 'Bob Wilson',
+    status: 'away',
+    activeConversations: 1,
+    type: 'human',
+    specialization: 'technical'
+  },
+  {
+    id: 'ai-sales-1',
+    name: 'Sales Pro',
+    status: 'online',
+    activeConversations: 12,
+    type: 'ai',
+    specialization: 'sales',
+    aiModel: 'GPT-4',
+    confidence: 94,
+    capabilities: ['lead_qualification', 'pricing_queries', 'demo_scheduling']
+  },
+  {
+    id: 'ai-support-1',
+    name: 'Support Pro',
+    status: 'online',
+    activeConversations: 18,
+    type: 'ai',
+    specialization: 'support',
+    aiModel: 'GPT-4',
+    confidence: 96,
+    capabilities: ['order_tracking', 'basic_troubleshooting', 'account_help']
+  },
+  {
+    id: 'ai-tech-1',
+    name: 'Tech Helper',
+    status: 'online',
+    activeConversations: 6,
+    type: 'ai',
+    specialization: 'technical',
+    aiModel: 'Claude-3',
+    confidence: 87,
+    capabilities: ['api_support', 'integration_help', 'documentation']
+  }
+]
+
+const mockAiAgents: AIAgent[] = [
+  {
+    id: 'ai-sales-1',
+    name: 'Sales Pro',
+    type: 'sales',
+    status: 'active',
+    model: 'GPT-4-Turbo',
+    activeConversations: 12,
+    totalConversations: 1247,
+    successRate: 94.2,
+    averageResponseTime: 1.8,
+    capabilities: ['lead_qualification', 'pricing_queries', 'demo_scheduling', 'objection_handling'],
+    intents: ['pricing_inquiry', 'demo_request', 'feature_question', 'comparison_request']
+  },
+  {
+    id: 'ai-support-1',
+    name: 'Support Pro',
+    type: 'support',
+    status: 'active',
+    model: 'GPT-4',
+    activeConversations: 18,
+    totalConversations: 2891,
+    successRate: 96.8,
+    averageResponseTime: 1.2,
+    capabilities: ['order_tracking', 'account_help', 'basic_troubleshooting', 'billing_support'],
+    intents: ['order_inquiry', 'account_issue', 'billing_question', 'general_support']
+  },
+  {
+    id: 'ai-tech-1',
+    name: 'Tech Helper',
+    type: 'technical',
+    status: 'active',
+    model: 'Claude-3-Sonnet',
+    activeConversations: 6,
+    totalConversations: 543,
+    successRate: 87.3,
+    averageResponseTime: 2.4,
+    capabilities: ['api_support', 'integration_help', 'documentation', 'troubleshooting'],
+    intents: ['technical_issue', 'api_question', 'integration_help', 'documentation_request']
+  }
 ]
 
 export default function ConversationsModule() {
@@ -135,6 +408,11 @@ export default function ConversationsModule() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
+  const [channelFilter, setChannelFilter] = useState<string>('all')
+  const [showAiOnly, setShowAiOnly] = useState(false)
+  const [aiAgents] = useState<AIAgent[]>(mockAiAgents)
+  const [isAiTyping, setIsAiTyping] = useState(false)
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -148,15 +426,19 @@ export default function ConversationsModule() {
   const filteredConversations = conversations.filter(conv => {
     const matchesSearch = conv.contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          conv.contactPhone.includes(searchQuery) ||
-                         conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-    
+                         conv.contactEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         conv.intent?.toLowerCase().includes(searchQuery.toLowerCase())
+
     const matchesStatus = statusFilter === 'all' || conv.status === statusFilter
     const matchesPriority = priorityFilter === 'all' || conv.priority === priorityFilter
-    
-    return matchesSearch && matchesStatus && matchesPriority
+    const matchesChannel = channelFilter === 'all' || conv.primaryChannel === channelFilter
+    const matchesAiFilter = !showAiOnly || conv.isAiActive
+
+    return matchesSearch && matchesStatus && matchesPriority && matchesChannel && matchesAiFilter
   })
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return
 
     const newMessage: Message = {
@@ -165,16 +447,19 @@ export default function ConversationsModule() {
       timestamp: new Date(),
       isIncoming: false,
       status: 'sent',
-      type: 'text'
+      type: 'text',
+      channel: selectedConversation.primaryChannel
     }
 
+    // Update conversation with human message
     const updatedConversations = conversations.map(conv => {
       if (conv.id === selectedConversation.id) {
         return {
           ...conv,
           messages: [...conv.messages, newMessage],
           lastMessage: messageInput,
-          lastMessageTime: new Date()
+          lastMessageTime: new Date(),
+          isAiActive: false // Human took over
         }
       }
       return conv
@@ -185,9 +470,135 @@ export default function ConversationsModule() {
       ...selectedConversation,
       messages: [...selectedConversation.messages, newMessage],
       lastMessage: messageInput,
-      lastMessageTime: new Date()
+      lastMessageTime: new Date(),
+      isAiActive: false
     })
     setMessageInput('')
+
+    // Simulate AI suggestion for human agent
+    if (selectedConversation.assignedAiAgent) {
+      const suggestions = await generateAiSuggestions(messageInput, selectedConversation)
+      setAiSuggestions(suggestions)
+    }
+  }
+
+  // Simulate AI response generation
+  const generateAiSuggestions = async (message: string, conversation: Conversation): Promise<string[]> => {
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Mock AI suggestions based on message content
+    const suggestions = []
+    if (message.toLowerCase().includes('price') || message.toLowerCase().includes('cost')) {
+      suggestions.push('Would you like me to send you our pricing guide?')
+      suggestions.push('I can schedule a call with our sales team to discuss pricing.')
+      suggestions.push('Our pricing starts at $49/month for teams up to 10 users.')
+    } else if (message.toLowerCase().includes('help') || message.toLowerCase().includes('support')) {
+      suggestions.push('I\'d be happy to help! Can you tell me more about the issue?')
+      suggestions.push('Let me check our knowledge base for solutions.')
+      suggestions.push('Would you like me to escalate this to our technical team?')
+    } else {
+      suggestions.push('Thank you for that information. How else can I help?')
+      suggestions.push('Is there anything specific you\'d like to know about our platform?')
+    }
+
+    return suggestions.slice(0, 3)
+  }
+
+  // Simulate AI auto-response for AI-handled conversations
+  const triggerAiResponse = async (conversation: Conversation, userMessage: string) => {
+    if (!conversation.isAiActive || !conversation.assignedAiAgent) return
+
+    setIsAiTyping(true)
+
+    // Simulate AI thinking time
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    const aiResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      content: generateMockAiResponse(userMessage, conversation.assignedAiAgent.type),
+      timestamp: new Date(),
+      isIncoming: false,
+      isFromAgent: true,
+      agentName: `${conversation.assignedAiAgent.name} (AI)`,
+      status: 'sent',
+      type: 'ai_response',
+      channel: conversation.primaryChannel,
+      aiAgent: {
+        name: conversation.assignedAiAgent.name,
+        confidence: Math.floor(Math.random() * 20) + 80, // 80-100%
+        intent: detectIntent(userMessage),
+        suggestions: []
+      }
+    }
+
+    // Update conversation with AI response
+    const updatedConversations = conversations.map(conv => {
+      if (conv.id === conversation.id) {
+        return {
+          ...conv,
+          messages: [...conv.messages, aiResponse],
+          lastMessage: aiResponse.content,
+          lastMessageTime: new Date()
+        }
+      }
+      return conv
+    })
+
+    setConversations(updatedConversations)
+    if (selectedConversation?.id === conversation.id) {
+      setSelectedConversation({
+        ...selectedConversation,
+        messages: [...selectedConversation.messages, aiResponse],
+        lastMessage: aiResponse.content,
+        lastMessageTime: new Date()
+      })
+    }
+
+    setIsAiTyping(false)
+  }
+
+  // Mock AI response generation
+  const generateMockAiResponse = (userMessage: string, agentType: string): string => {
+    const responses = {
+      sales: [
+        "I'd be happy to help you with pricing information! What's the size of your team?",
+        "Great question! Our platform offers several plans to fit different needs. Would you like a personalized demo?",
+        "I can see you're interested in our features. Let me connect you with our sales specialist who can provide detailed information."
+      ],
+      support: [
+        "I understand your concern. Let me look into that right away for you.",
+        "Thank you for reaching out! I'll help you resolve this issue quickly.",
+        "I've found some information that might help. Let me walk you through the solution."
+      ],
+      technical: [
+        "I see you're having a technical issue. Let me check our documentation for the best solution.",
+        "This looks like an integration question. I can provide step-by-step guidance.",
+        "For this technical issue, I recommend checking our API documentation. Would you like me to send you the relevant links?"
+      ]
+    }
+
+    const typeResponses = responses[agentType as keyof typeof responses] || responses.support
+    return typeResponses[Math.floor(Math.random() * typeResponses.length)]
+  }
+
+  // Mock intent detection
+  const detectIntent = (message: string): string => {
+    const intents = {
+      pricing: ['price', 'cost', 'plan', 'pricing', 'expensive', 'cheap'],
+      support: ['help', 'issue', 'problem', 'broken', 'error', 'bug'],
+      technical: ['api', 'integration', 'code', 'webhook', 'technical'],
+      demo: ['demo', 'trial', 'test', 'show', 'example'],
+      billing: ['bill', 'payment', 'invoice', 'charge', 'subscription']
+    }
+
+    for (const [intent, keywords] of Object.entries(intents)) {
+      if (keywords.some(keyword => message.toLowerCase().includes(keyword))) {
+        return intent
+      }
+    }
+
+    return 'general_inquiry'
   }
 
   const handleAssignAgent = (conversationId: string, agentId: string) => {
@@ -233,21 +644,60 @@ export default function ConversationsModule() {
 
   const getStatusColor = (status: Conversation['status']) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'waiting': return 'bg-yellow-100 text-yellow-800'
-      case 'resolved': return 'bg-blue-100 text-blue-800'
-      case 'archived': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'active': return 'bg-green-100 text-green-800 border-green-200'
+      case 'waiting': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'resolved': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'archived': return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'ai_handling': return 'bg-purple-100 text-purple-800 border-purple-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
   const getPriorityColor = (priority: Conversation['priority']) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800'
-      case 'medium': return 'bg-orange-100 text-orange-800'
-      case 'low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'urgent': return 'bg-red-100 text-red-800 border-red-200'
+      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200'
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'low': return 'bg-green-100 text-green-800 border-green-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
+  }
+
+  const getChannelIcon = (channel: string) => {
+    switch (channel) {
+      case 'website': return <Globe className="w-4 h-4" />
+      case 'whatsapp': return <MessageSquare className="w-4 h-4" />
+      case 'email': return <Mail className="w-4 h-4" />
+      case 'sms': return <Smartphone className="w-4 h-4" />
+      case 'telegram': return <Send className="w-4 h-4" />
+      default: return <MessageCircle className="w-4 h-4" />
+    }
+  }
+
+  const getChannelColor = (channel: string) => {
+    switch (channel) {
+      case 'website': return 'bg-blue-50 text-blue-700 border-blue-200'
+      case 'whatsapp': return 'bg-green-50 text-green-700 border-green-200'
+      case 'email': return 'bg-gray-50 text-gray-700 border-gray-200'
+      case 'sms': return 'bg-purple-50 text-purple-700 border-purple-200'
+      case 'telegram': return 'bg-sky-50 text-sky-700 border-sky-200'
+      default: return 'bg-gray-50 text-gray-700 border-gray-200'
+    }
+  }
+
+  const getSentimentIcon = (sentiment?: string) => {
+    switch (sentiment) {
+      case 'positive': return <ThumbsUp className="w-3 h-3 text-green-600" />
+      case 'negative': return <ThumbsDown className="w-3 h-3 text-red-600" />
+      case 'neutral': return <Activity className="w-3 h-3 text-gray-600" />
+      default: return null
+    }
+  }
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 90) return 'text-green-600 bg-green-50'
+    if (confidence >= 70) return 'text-yellow-600 bg-yellow-50'
+    return 'text-red-600 bg-red-50'
   }
 
   return (
@@ -277,31 +727,56 @@ export default function ConversationsModule() {
                 />
               </div>
               
-              <div className="flex space-x-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="waiting">Waiting</SelectItem>
+                    <SelectItem value="ai_handling">AI Handling</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
                     <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Priority" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Priority</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                     <SelectItem value="high">High</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="low">Low</SelectItem>
                   </SelectContent>
                 </Select>
+
+                <Select value={channelFilter} onValueChange={setChannelFilter}>
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Channels</SelectItem>
+                    <SelectItem value="website">🌐 Website</SelectItem>
+                    <SelectItem value="whatsapp">💬 WhatsApp</SelectItem>
+                    <SelectItem value="email">📧 Email</SelectItem>
+                    <SelectItem value="sms">📱 SMS</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant={showAiOnly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowAiOnly(!showAiOnly)}
+                  className="text-xs"
+                >
+                  <Bot className="w-3 h-3 mr-1" />
+                  AI Only
+                </Button>
               </div>
             </div>
           </div>
@@ -320,61 +795,118 @@ export default function ConversationsModule() {
                   onClick={() => setSelectedConversation(conversation)}
                 >
                   <div className="flex items-start space-x-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={conversation.contactAvatar} />
-                      <AvatarFallback>
-                        {conversation.contactName.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={conversation.contactAvatar} />
+                        <AvatarFallback>
+                          {conversation.contactName.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Channel indicator */}
+                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${getChannelColor(conversation.primaryChannel)}`}>
+                        {getChannelIcon(conversation.primaryChannel)}
+                      </div>
+                    </div>
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-sm truncate">
-                          {conversation.contactName}
-                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium text-sm truncate">
+                            {conversation.contactName}
+                          </h3>
+                          {conversation.isAiActive && (
+                            <div className="flex items-center">
+                              <Bot className="w-3 h-3 text-purple-600" />
+                              {conversation.assignedAiAgent && (
+                                <span className={`text-xs px-1 py-0.5 rounded ${getConfidenceColor(conversation.assignedAiAgent.confidence)}`}>
+                                  {conversation.assignedAiAgent.confidence}%
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {conversation.sentiment && getSentimentIcon(conversation.sentiment)}
+                        </div>
                         <span className="text-xs text-muted-foreground">
-                          {conversation.lastMessageTime.toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                          {conversation.lastMessageTime.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </span>
                       </div>
-                      
-                      <p className="text-sm text-muted-foreground truncate">
-                        {conversation.lastMessage}
-                      </p>
-                      
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex space-x-1">
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-xs ${getStatusColor(conversation.status)}`}
-                          >
-                            {conversation.status}
+
+                      <div className="flex items-center space-x-1 mt-1">
+                        {conversation.leadScore && (
+                          <Badge variant="outline" className="text-xs">
+                            <Target className="w-3 h-3 mr-1" />
+                            {conversation.leadScore}%
                           </Badge>
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-xs ${getPriorityColor(conversation.priority)}`}
-                          >
-                            {conversation.priority}
-                          </Badge>
-                        </div>
-                        
-                        {conversation.unreadCount > 0 && (
-                          <Badge variant="destructive" className="text-xs">
-                            {conversation.unreadCount}
+                        )}
+                        {conversation.intent && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                            {conversation.intent.replace('_', ' ')}
                           </Badge>
                         )}
                       </div>
-                      
-                      {conversation.assignedAgent && (
-                        <div className="flex items-center mt-1">
-                          <User className="h-3 w-3 mr-1 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {conversation.assignedAgent}
-                          </span>
+
+                      <p className="text-sm text-muted-foreground truncate mt-1">
+                        {conversation.isAiActive && <Bot className="w-3 h-3 mr-1 inline text-purple-600" />}
+                        {conversation.lastMessage}
+                      </p>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex space-x-1 flex-wrap">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs border ${getStatusColor(conversation.status)}`}
+                          >
+                            {conversation.status.replace('_', ' ')}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs border ${getPriorityColor(conversation.priority)}`}
+                          >
+                            {conversation.priority}
+                          </Badge>
+                          {conversation.needsHumanReview && (
+                            <Badge variant="outline" className="text-xs border-orange-200 bg-orange-50 text-orange-700">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Review
+                            </Badge>
+                          )}
                         </div>
-                      )}
+
+                        <div className="flex items-center space-x-1">
+                          {conversation.unreadCount > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {conversation.unreadCount}
+                            </Badge>
+                          )}
+                          {conversation.availableChannels.length > 1 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{conversation.availableChannels.length - 1}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-1">
+                        {conversation.assignedAgent && (
+                          <div className="flex items-center">
+                            <User className="h-3 w-3 mr-1 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {conversation.assignedAgent}
+                            </span>
+                          </div>
+                        )}
+                        {conversation.assignedAiAgent && (
+                          <div className="flex items-center">
+                            <Brain className="h-3 w-3 mr-1 text-purple-600" />
+                            <span className="text-xs text-purple-600">
+                              {conversation.assignedAiAgent.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -8,6 +8,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   updateProfile as updateFirebaseProfile,
 } from "firebase/auth"
@@ -34,6 +36,7 @@ interface AuthContextType {
   mayaLoading: boolean; // Maya is currently loading
   isAdmin: boolean; // New property to indicate admin status
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (updates: {
@@ -99,14 +102,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = userProfile?.role === "admin";
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    console.log('🔍 DEBUG: Starting signin for email:', email);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    console.log('✅ Firebase signin successful for user:', user.uid);
+
+    // Check if user profile exists
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("user_id", user.uid)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('❌ Error checking user profile during signin:', profileError);
+    }
+
+    if (!profile) {
+      console.log('⚠️ User profile missing during signin, creating it...');
+      const { data: newProfile, error: createError } = await supabase.from("user_profiles").insert({
+        user_id: user.uid,
+        full_name: user.displayName || user.email?.split('@')[0] || 'User',
+        email: user.email
+      }).select().single();
+
+      if (createError) {
+        console.error('❌ Profile creation during signin failed:', createError);
+      } else {
+        console.log('✅ Profile created during signin:', newProfile);
+      }
+    } else {
+      console.log('✅ User profile found during signin:', profile);
+    }
   }
 
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider()
+    const userCredential = await signInWithPopup(auth, provider)
+    const user = userCredential.user
+
+    // Create user profile in Supabase if it doesn't exist
+    console.log('🔍 DEBUG: Checking if user profile exists for:', user.uid);
+    const { data: existingProfile, error: checkError } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("user_id", user.uid)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Error checking existing profile:', checkError);
+    }
+
+    if (!existingProfile) {
+      console.log('🚀 Creating new user profile for Google user...');
+      const { data: newProfile, error: createError } = await supabase.from("user_profiles").insert({
+        user_id: user.uid,
+        full_name: user.displayName || user.email?.split('@')[0] || 'User',
+        email: user.email
+      }).select().single();
+
+      if (createError) {
+        console.error('❌ Google profile creation failed:', createError);
+        throw new Error(`Profile creation failed: ${createError.message}`);
+      }
+      console.log('✅ Google user profile created:', newProfile);
+    } else {
+      console.log('✅ User profile already exists:', existingProfile);
+    }
+
+      // Log user creation activity
+      await activityService.logActivity(
+        user.uid,
+        "USER_CREATED_GOOGLE",
+        {
+          email: user.email,
+          displayName: user.displayName,
+          provider: "google"
+        }
+      )
+    }
+
   const signUp = async (email: string, password: string, displayName: string) => {
+    console.log('🔍 DEBUG: Starting signup for email:', email);
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    console.log('✅ Firebase user created:', user.uid);
+
     await updateFirebaseProfile(user, { displayName });
-    await supabase.from("user_profiles").insert({ user_id: user.uid, full_name: displayName });
+
+    console.log('🚀 Creating user profile in Supabase...');
+    const { data: profile, error: profileError } = await supabase.from("user_profiles").insert({
+      user_id: user.uid,
+      full_name: displayName,
+      email: email
+    }).select().single();
+
+    if (profileError) {
+      console.error('❌ Profile creation failed:', profileError);
+      throw new Error(`Profile creation failed: ${profileError.message}`);
+    }
+    console.log('✅ User profile created:', profile);
 
     // Log user creation activity
     if (user.uid) {
@@ -166,6 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mayaLoading,
     isAdmin,
     signIn,
+    signInWithGoogle,
     signUp,
     logout,
     updateUserProfile,

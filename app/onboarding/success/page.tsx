@@ -56,14 +56,20 @@ export default function PaymentSuccessPage() {
       // Clear selected plan data
       localStorage.removeItem('selectedPlan')
 
-      // Auto-redirect to setup page after 5 seconds (show success briefly)
-      const redirectTimer = setTimeout(() => {
-        console.log('🎉 Auto-redirecting paid user to platform setup')
-        // Ensure setup status is pending for new users
-        if (!localStorage.getItem('setupStatus')) {
-          localStorage.setItem('setupStatus', 'pending')
+      // Auto-redirect logic after 5 seconds
+      const redirectTimer = setTimeout(async () => {
+        // Check if setup has already been completed/skipped
+        const setupStatus = localStorage.getItem('setupStatus')
+        console.log('🎉 Auto-redirecting paid user - setup status:', setupStatus)
+
+        if (setupStatus === 'completed' || setupStatus === 'skipped') {
+          // Setup was already done, go directly to app shell
+          console.log('🚀 Setup already completed, redirecting to app shell')
+          router.push('/shell');
+        } else {
+          // Setup not done yet, go to setup page
+          router.push('/onboarding/setup');
         }
-        router.push('/onboarding/setup')
       }, 5000)
 
       // Countdown timer
@@ -89,19 +95,48 @@ export default function PaymentSuccessPage() {
     }
   }
 
-  const handleStartSetup = () => {
-    // Ensure setup status is pending for new users
-    if (!localStorage.getItem('setupStatus')) {
-      localStorage.setItem('setupStatus', 'pending')
+  const handleStartSetup = async () => {
+    // Check if setup has already been completed/skipped
+    const setupStatus = localStorage.getItem('setupStatus')
+    console.log('🚀 Start Setup button clicked - setup status:', setupStatus)
+
+    if (setupStatus === 'completed' || setupStatus === 'skipped') {
+      // Setup was already done, go directly to app shell
+      console.log('🚀 Start Setup: Setup already completed, redirecting to app shell')
+      router.push('/shell');
+    } else {
+      // Setup not done yet, go to setup page
+      router.push('/onboarding/setup');
     }
-    router.push('/onboarding/setup')
   }
 
-  const handleGoToDashboard = () => {
-    // Mark setup as skipped if user goes directly to dashboard
-    localStorage.setItem('setupStatus', 'skipped')
-    console.log('⏭️ Setup skipped from success page, going directly to dashboard')
-    router.push('/')
+  const handleGoToDashboard = async () => {
+    console.log('⏭️ Going directly to organization dashboard')
+
+    try {
+      // Get user's organization information
+      const response = await fetch('/api/user/subscription-status', {
+        headers: {
+          'Authorization': `Bearer ${await user?.getIdToken()}`
+        }
+      });
+
+      if (response.ok) {
+        const subscriptionData = await response.json();
+        if (subscriptionData.primaryOrganization) {
+          router.push(`/org/${subscriptionData.primaryOrganization.slug}/dashboard`);
+          return;
+        } else if (subscriptionData.organizations && subscriptionData.organizations.length > 0) {
+          router.push(`/org/${subscriptionData.organizations[0].slug}/dashboard`);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get organization info:', error);
+    }
+
+    // Fallback to home page
+    router.push('/');
   }
 
   const handleContactSupport = () => {

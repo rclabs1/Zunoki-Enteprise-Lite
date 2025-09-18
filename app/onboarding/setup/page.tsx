@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
-import { 
-  MessageCircle, 
-  Mail, 
-  Phone, 
-  BarChart3, 
-  Zap, 
+import {
+  MessageCircle,
+  Mail,
+  Phone,
+  BarChart3,
+  Zap,
   CheckCircle,
   ArrowRight,
   Star,
@@ -22,7 +22,8 @@ import {
   Volume2,
   Settings,
   AlertCircle,
-  X
+  X,
+  Send
 } from 'lucide-react'
 import { SetupIntegrationBridge, type ConnectionStatus, type WhatsAppProvider } from '@/lib/services/setup-integration-bridge'
 import EnhancedIntegrationCard from '@/components/enhanced-integration-card'
@@ -31,6 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 // Import existing voice services
 const getTTSService = async () => {
@@ -766,17 +768,17 @@ export default function PlatformSetupPage() {
   }
 
   const handleSkipForNow = () => {
-    // Mark setup as skipped and redirect to dashboard
+    // Mark setup as skipped and redirect to AgenticFlow app shell
     localStorage.setItem('setupStatus', 'skipped')
-    console.log('⏭️ Setup skipped by user')
-    router.push('/')
+    console.log('⏭️ Setup skipped by user, redirecting to app shell')
+    router.push('/shell')
   }
 
   const handleFinishSetup = () => {
-    // Mark setup as completed and redirect to dashboard  
+    // Mark setup as completed and redirect to AgenticFlow app shell
     localStorage.setItem('setupStatus', 'completed')
-    console.log('✅ Setup completed by user')
-    router.push('/')
+    console.log('✅ Setup completed by user, redirecting to app shell')
+    router.push('/shell')
   }
 
   const categoryGroups = {
@@ -1338,6 +1340,205 @@ export default function PlatformSetupPage() {
                     Voice preferences saved!
                   </div>
                 )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Website Chat Widget Configuration */}
+        <Card className="mb-8 bg-gradient-to-r from-green-50 to-teal-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-green-600" />
+              Website Chat Widget Setup
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Widget Configuration */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Widget Appearance</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="widgetTitle">Welcome Message</Label>
+                      <Input
+                        id="widgetTitle"
+                        placeholder="Hi! How can we help you today?"
+                        defaultValue="Hi! How can we help you today?"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="widgetSubtitle">Subtitle</Label>
+                      <Input
+                        id="widgetSubtitle"
+                        placeholder="We typically reply in a few minutes"
+                        defaultValue="We typically reply in a few minutes"
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="widgetColor">Primary Color</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            id="widgetColor"
+                            type="color"
+                            defaultValue="#22c55e"
+                            className="w-16 h-10 p-1"
+                          />
+                          <Input
+                            placeholder="#22c55e"
+                            defaultValue="#22c55e"
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="widgetPosition">Position</Label>
+                        <Select defaultValue="bottom-right">
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                            <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                            <SelectItem value="top-right">Top Right</SelectItem>
+                            <SelectItem value="top-left">Top Left</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Installation Instructions */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Installation Code</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Copy this code and paste it before the closing &lt;/body&gt; tag on your website:
+                  </p>
+
+                  <div className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto">
+                    <code>{`<!-- Zunoki Chat Widget -->
+<script>
+  window.ZunokiConfig = {
+    apiKey: '${user?.uid || 'YOUR_API_KEY'}',
+    primaryColor: '#22c55e',
+    position: 'bottom-right',
+    welcomeMessage: 'Hi! How can we help you today?',
+    subtitle: 'We typically reply in a few minutes'
+  };
+</script>
+<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com'}/widget/chat.js"></script>`}</code>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const code = `<!-- Zunoki Chat Widget -->
+<script>
+  window.ZunokiConfig = {
+    apiKey: '${user?.uid || 'YOUR_API_KEY'}',
+    primaryColor: '#22c55e',
+    position: 'bottom-right',
+    welcomeMessage: 'Hi! How can we help you today?',
+    subtitle: 'We typically reply in a few minutes'
+  };
+</script>
+<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com'}/widget/chat.js"></script>`
+                        navigator.clipboard.writeText(code)
+                      }}
+                    >
+                      📋 Copy Code
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open('/shell?module=conversations', '_blank')}
+                    >
+                      👀 Preview Conversations
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Widget Preview */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">Widget Preview</h5>
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        Z
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          Hi! How can we help you today?
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          We typically reply in a few minutes
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Input placeholder="Type your message..." className="flex-1 text-sm" disabled />
+                      <Button size="sm" disabled>
+                        <Send className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Features List */}
+            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="font-medium text-green-900 mb-3">✨ Website Chat Features</h4>
+              <div className="grid md:grid-cols-2 gap-4">
+                <ul className="space-y-2 text-sm text-green-800">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Real-time visitor messaging
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Automatic lead capture
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Mobile-responsive design
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Customizable appearance
+                  </li>
+                </ul>
+                <ul className="space-y-2 text-sm text-green-800">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    AI-powered auto-responses
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Team member assignment
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Conversation history
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    GDPR compliant
+                  </li>
+                </ul>
               </div>
             </div>
           </CardContent>

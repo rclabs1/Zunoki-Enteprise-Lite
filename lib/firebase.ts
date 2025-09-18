@@ -16,11 +16,15 @@ const firebaseConfig = {
 let app
 let auth
 try {
-  if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && !process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('mock')) {
+  if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
     app = initializeApp(firebaseConfig)
     auth = getAuth(app)
+
+    if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY.includes('mock')) {
+      console.warn('Firebase initialized with mock configuration - authentication features may not work properly')
+    }
   } else {
-    console.warn('Firebase not initialized - using mock configuration')
+    console.warn('Firebase not initialized - missing API key')
     auth = null
   }
 } catch (error) {
@@ -45,4 +49,43 @@ if (typeof window !== "undefined") {
 }
 
 export { analytics }
+
+// Enhanced Firebase integration for n8n workflows
+export const trackCustomerJourneyEvent = async (
+  eventName: string,
+  properties: Record<string, any>
+) => {
+  if (analytics && typeof window !== 'undefined') {
+    const { logEvent } = await import('firebase/analytics');
+    logEvent(analytics, eventName, {
+      ...properties,
+      timestamp: Date.now(),
+      user_agent: navigator.userAgent,
+    });
+  }
+};
+
+// Track n8n workflow triggers
+export const trackWorkflowTrigger = (workflowName: string, organizationId: string) => {
+  trackCustomerJourneyEvent('n8n_workflow_triggered', {
+    workflow_name: workflowName,
+    organization_id: organizationId,
+  });
+};
+
+// Track customer journey stage transitions
+export const trackJourneyStageTransition = (
+  fromStage: string,
+  toStage: string,
+  customerId: string,
+  organizationId: string
+) => {
+  trackCustomerJourneyEvent('journey_stage_transition', {
+    from_stage: fromStage,
+    to_stage: toStage,
+    customer_id: customerId,
+    organization_id: organizationId,
+  });
+};
+
 export default app

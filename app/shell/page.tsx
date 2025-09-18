@@ -33,6 +33,9 @@ export default function ShellPage() {
   const [connectedMessagingPlatforms, setConnectedMessagingPlatforms] = useState<any[]>([])
   const searchParams = useSearchParams()
 
+  console.log("🔍 ShellPage - URL params:", Object.fromEntries(searchParams.entries()))
+  console.log("🔍 ShellPage - Org param:", searchParams.get('org'))
+
   // Handle URL module parameter
   useEffect(() => {
     const moduleParam = searchParams.get('module')

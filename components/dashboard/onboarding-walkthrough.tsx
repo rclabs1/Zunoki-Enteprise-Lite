@@ -470,7 +470,7 @@ export default function OnboardingWalkthrough({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        "max-w-2xl bg-[#88e7ae] border-[#88e7ae] text-gray-800 overflow-hidden",
+        "max-w-lg max-h-[80vh] bg-[#88e7ae] border-[#88e7ae] text-gray-800 overflow-hidden",
         className
       )}>
         <DialogHeader className="pb-4">
@@ -505,7 +505,7 @@ export default function OnboardingWalkthrough({
           </div>
         </DialogHeader>
 
-        <div className="py-6">
+        <div className="py-6 max-h-[50vh] overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}

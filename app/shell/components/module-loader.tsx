@@ -26,12 +26,11 @@ const PlatformsModule = lazy(() => import('../../modules/platforms/index'))
 const SettingsModule = lazy(() => import('../../modules/settings/index'))
 const AdHubModule = lazy(() => import('../../modules/ad-hub/index'))
 const UnifiedOverview = lazy(() => import('../../overview/page'))
-const ConversationView = lazy(() => import('../../../../components/conversation-view'))
+const ConversationView = lazy(() => import('../../../components/conversation-view'))
 const MarketplacePage = lazy(() => import('../../marketplace/page'))
 const AgentBuilderPage = lazy(() => import('../../agent-builder/page'))
-// Temporarily disabled - causing memory issues
-// const EnhancedAgentBuilderPage = lazy(() => import('../../agent-builder-enhanced/page'))
 const MayaIntelligenceModule = lazy(() => import('../../modules/maya-intelligence/index'))
+const MessagingModule = lazy(() => import('../../modules/messaging/index'))
 
 interface ModuleLoaderProps {
   currentModule: string | null
@@ -529,12 +528,8 @@ export function ModuleLoader({ currentModule }: ModuleLoaderProps) {
       case 'automation':
         return <AutomationModule />
       case 'platforms':
-        // This case should not be reached as platforms redirects to /connect-messaging
-        // But include it for completeness
-        router.push('/connect-messaging')
-        return <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Redirecting to messaging platforms...</p>
-        </div>
+      case 'messaging':
+        return <MessagingModule />
       case 'ad-hub':
         return <AdHubModule />
       case 'settings':
@@ -549,13 +544,6 @@ export function ModuleLoader({ currentModule }: ModuleLoaderProps) {
         return <MarketplacePage />
       case 'agent-builder':
         return <AgentBuilderPage />
-      case 'zunoki-agent':
-        // Temporarily disabled - causing memory issues
-        return <div className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-4">Enhanced Agent Builder</h2>
-          <p className="text-gray-600">Temporarily unavailable for optimization.</p>
-          <p className="text-sm text-blue-600 mt-2">Available at: <a href="https://github.com/rclabs1/zunoki-agent-builder" target="_blank" className="underline">GitHub Repository</a></p>
-        </div>
       case 'maya-intelligence':
         return <MayaIntelligenceModule />
       default:

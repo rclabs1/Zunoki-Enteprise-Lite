@@ -42,7 +42,8 @@ export default function PaymentPage() {
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    organizationName: ''
   })
   
   // Coupon state
@@ -163,17 +164,17 @@ export default function PaymentPage() {
 
       const data = await response.json()
 
-      if (data.valid && data.coupon) {
+      if (data.success && data.coupon) {
         // The coupon API now returns amounts in the correct currency, no conversion needed
         setAppliedCoupon(data.coupon)
-        setFinalAmount(data.coupon.finalAmount)
+        setFinalAmount(data.coupon.final_amount)
         setCouponError('')
-        
+
         console.log('🎫 Coupon applied:', {
-          currency: data.coupon.currency,
-          originalAmount: data.coupon.originalAmount,
-          discountAmount: data.coupon.discountAmount,
-          finalAmount: data.coupon.finalAmount
+          originalAmount: data.coupon.original_amount,
+          discountAmount: data.coupon.discount_amount,
+          finalAmount: data.coupon.final_amount,
+          discountPercentage: data.coupon.discount_percentage
         })
       } else {
         setCouponError(data.error || 'Invalid coupon code')
@@ -207,7 +208,7 @@ export default function PaymentPage() {
     if (!selectedPlan || !user) return
 
     // Validate customer info
-    if (!customerInfo.name || !customerInfo.email) {
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.organizationName) {
       alert('Please fill in all required fields')
       return
     }
@@ -440,23 +441,6 @@ export default function PaymentPage() {
                   </div>
                 )}
 
-                {/* Popular Offers (only show public coupons) */}
-                {!appliedCoupon && (
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <h4 className="text-sm font-medium text-blue-900 mb-2">🏷️ Popular Offers</h4>
-                    <div className="space-y-1 text-xs text-blue-800">
-                      <div className="flex justify-between">
-                        <span>🚀 EARLY50 - 50% off early adopters</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>🎉 LAUNCH25 - 25% off launch special</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>🎓 STUDENT20 - 20% off for students</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Discount Display */}
@@ -553,6 +537,17 @@ export default function PaymentPage() {
                     className="mt-1"
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="organizationName">Organization Name *</Label>
+                  <Input
+                    id="organizationName"
+                    value={customerInfo.organizationName}
+                    onChange={(e) => handleInputChange('organizationName', e.target.value)}
+                    placeholder="Enter your organization name"
+                    className="mt-1"
+                  />
+                </div>
               </div>
 
               {/* Payment Options */}
@@ -585,7 +580,7 @@ export default function PaymentPage() {
               <div className="space-y-3">
                 <Button 
                   onClick={handlePayment}
-                  disabled={isProcessing || !customerInfo.name || !customerInfo.email}
+                  disabled={isProcessing || !customerInfo.name || !customerInfo.email || !customerInfo.organizationName}
                   size="lg"
                   className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-bold py-6 text-xl rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 group"
                 >

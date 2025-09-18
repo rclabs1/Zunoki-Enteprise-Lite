@@ -476,7 +476,14 @@ export class DashboardService {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        // Check if table doesn't exist (common during development)
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.warn('automation_logs table not found - returning empty activity');
+          return [];
+        }
+        throw error;
+      }
       return data || [];
     } catch (error) {
       console.error('Error fetching recent activity:', error);

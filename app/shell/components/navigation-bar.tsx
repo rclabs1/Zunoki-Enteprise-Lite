@@ -42,16 +42,12 @@ export function NavigationBar({ currentModule, onModuleSelect }: NavigationBarPr
     { id: 'ad-hub', label: 'Ad Hub', icon: '📺', description: 'Connect & Analyze Ad Platforms' },
     { id: 'marketplace', label: 'Marketplace', icon: '🛒', description: 'Agent Marketplace' },
     { id: 'agent-builder', label: 'Builder', icon: '🔧', description: 'Classic Agent Builder' },
-    { id: 'zunoki-agent', label: 'Zunoki. Agent', icon: '✨', description: 'Enhanced AI Agent Builder' },
     { id: 'setup', label: 'Setup', icon: '🚀', description: 'Platform Integration Setup' },
     { id: 'settings', label: 'Settings', icon: '⚙️', description: 'Configuration' }
   ]
 
   const handleModuleClick = (moduleId: string) => {
-    if (moduleId === 'platforms') {
-      // Navigate directly to connect-messaging page for platforms
-      router.push('/connect-messaging')
-    } else if (moduleId === 'setup') {
+    if (moduleId === 'setup') {
       // Navigate directly to setup page
       router.push('/onboarding/setup')
     } else {
