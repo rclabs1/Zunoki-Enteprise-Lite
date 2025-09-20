@@ -17,9 +17,19 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   console.log('🚀 OnboardingGuard - Component mounted', { user: !!user, loading })
 
   useEffect(() => {
+    console.log('🔄 OnboardingGuard - useEffect ENTRY', {
+      user: !!user,
+      loading,
+      userUid: user?.uid,
+      timestamp: new Date().toISOString()
+    })
+
     const checkSubscription = async () => {
-      console.log('🔄 OnboardingGuard - useEffect triggered', { user: !!user, loading })
-      if (!user || loading) return
+      console.log('🔄 OnboardingGuard - checkSubscription called', { user: !!user, loading })
+      if (!user || loading) {
+        console.log('🚫 OnboardingGuard - Early return due to no user or loading')
+        return
+      }
 
       // Check localStorage setup status first
       const localSetupStatus = localStorage.getItem('setupStatus') as 'pending' | 'completed' | 'skipped' | null

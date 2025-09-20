@@ -351,7 +351,7 @@ export function MayaProvider({ children }: { children: React.ReactNode }) {
   const executeAction = useCallback(async (action: string, data?: any) => {
     switch (action) {
       case 'navigate_insights':
-        navigateToModule('insights')
+        navigateToModule('zunoki-intelligence')
         break
       case 'navigate_campaigns':
         navigateToModule('campaigns')
@@ -405,13 +405,29 @@ export function MayaProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const navigateToModule = useCallback((module: string) => {
-    setCurrentModule(module)
-    
-    // Add navigation message
+    // Handle legacy module names for backward compatibility
+    let normalizedModule = module
+    if (module === 'maya-intelligence' || module === 'insights') {
+      normalizedModule = 'zunoki-intelligence'
+    }
+
+    setCurrentModule(normalizedModule)
+
+    // Add navigation message with proper module names
+    const moduleNames: { [key: string]: string } = {
+      'zunoki-intelligence': 'Zunoki Intelligence',
+      'conversations': 'Conversations',
+      'campaigns': 'Campaigns',
+      'platforms': 'Platforms',
+      'settings': 'Settings'
+    }
+
+    const displayName = moduleNames[normalizedModule] || normalizedModule.charAt(0).toUpperCase() + normalizedModule.slice(1)
+
     const navMessage: MayaMessage = {
       id: Date.now().toString(),
       type: 'maya',
-      content: `Opening ${module.charAt(0).toUpperCase() + module.slice(1)} module for you...`,
+      content: `Opening ${displayName} module for you...`,
       timestamp: new Date()
     }
     setMessages(prev => [...prev, navMessage])

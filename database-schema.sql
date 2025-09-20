@@ -86,6 +86,23 @@ CREATE TABLE public.automation_executions (
   CONSTRAINT automation_executions_pkey PRIMARY KEY (id),
   CONSTRAINT automation_executions_workflow_fkey FOREIGN KEY (workflow_id) REFERENCES public.automation_workflows(id)
 );
+CREATE TABLE public.automation_logs (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  organization_id uuid NOT NULL,
+  user_id text NOT NULL,
+  workflow_id uuid,
+  action_type text NOT NULL,
+  action_details jsonb DEFAULT '{}'::jsonb,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'running'::text, 'completed'::text, 'failed'::text])),
+  error_message text,
+  execution_time_ms integer,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT automation_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT automation_logs_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT automation_logs_workflow_fkey FOREIGN KEY (workflow_id) REFERENCES public.automation_workflows(id)
+);
 CREATE TABLE public.automation_workflows (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   organization_id uuid NOT NULL,
@@ -132,6 +149,16 @@ CREATE TABLE public.contacts (
   last_interaction timestamp with time zone,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  phone_number text,
+  whatsapp_name text,
+  display_name text,
+  profile_picture_url text,
+  platform text DEFAULT 'web'::text,
+  platform_id text,
+  platform_username text,
+  is_blocked boolean DEFAULT false,
+  last_seen timestamp with time zone,
+  priority text DEFAULT 'medium'::text,
   CONSTRAINT contacts_pkey PRIMARY KEY (id),
   CONSTRAINT contacts_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
@@ -144,15 +171,23 @@ CREATE TABLE public.conversations (
   assigned_agent_id uuid,
   assigned_user_id text,
   priority text DEFAULT 'medium'::text CHECK (priority = ANY (ARRAY['low'::text, 'medium'::text, 'high'::text, 'urgent'::text])),
-  channel text DEFAULT 'web'::text CHECK (channel = ANY (ARRAY['web'::text, 'email'::text, 'whatsapp'::text, 'slack'::text, 'api'::text])),
+  channel text DEFAULT 'web'::text CHECK (channel = ANY (ARRAY['web'::text, 'email'::text, 'whatsapp'::text, 'slack'::text, 'telegram'::text, 'gmail'::text, 'sms'::text, 'chat-widget'::text, 'api'::text])),
   metadata jsonb DEFAULT '{}'::jsonb,
   last_message_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  platform_thread_id text,
+  unread_count integer DEFAULT 0,
+  handoff_reason text,
+  assigned_agent_name text,
+  last_message_text text,
+  category text DEFAULT 'general'::text,
+  integration_id uuid,
   CONSTRAINT conversations_pkey PRIMARY KEY (id),
   CONSTRAINT conversations_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT conversations_contact_fkey FOREIGN KEY (contact_id) REFERENCES public.contacts(id),
-  CONSTRAINT conversations_agent_fkey FOREIGN KEY (assigned_agent_id) REFERENCES public.ai_agents(id)
+  CONSTRAINT conversations_agent_fkey FOREIGN KEY (assigned_agent_id) REFERENCES public.ai_agents(id),
+  CONSTRAINT conversations_integration_fkey FOREIGN KEY (integration_id) REFERENCES public.messaging_integrations(id)
 );
 CREATE TABLE public.coupon_usage (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -214,7 +249,7 @@ CREATE TABLE public.integrations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   organization_id uuid NOT NULL,
   name text NOT NULL,
-  type text NOT NULL CHECK (type = ANY (ARRAY['whatsapp'::text, 'slack'::text, 'webhook'::text, 'api'::text, 'n8n'::text])),
+  type text NOT NULL CHECK (type = ANY (ARRAY['whatsapp'::text, 'slack'::text, 'telegram'::text, 'gmail'::text, 'email'::text, 'sms'::text, 'chat-widget'::text, 'webhook'::text, 'api'::text, 'n8n'::text])),
   configuration jsonb NOT NULL DEFAULT '{}'::jsonb,
   credentials jsonb DEFAULT '{}'::jsonb,
   status text DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'error'::text])),
@@ -224,6 +259,7 @@ CREATE TABLE public.integrations (
   created_by text NOT NULL,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  webhook_secret text,
   CONSTRAINT integrations_pkey PRIMARY KEY (id),
   CONSTRAINT integrations_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
 );
@@ -239,10 +275,44 @@ CREATE TABLE public.messages (
   user_id text,
   metadata jsonb DEFAULT '{}'::jsonb,
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  direction text,
+  platform text DEFAULT 'web'::text,
+  platform_message_id text,
+  reply_to_message_id text,
+  is_from_bot boolean DEFAULT false,
+  bot_name text,
+  status text DEFAULT 'delivered'::text,
+  timestamp timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  media_url text,
+  integration_id uuid,
   CONSTRAINT messages_pkey PRIMARY KEY (id),
   CONSTRAINT messages_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
   CONSTRAINT messages_conversation_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id),
-  CONSTRAINT messages_agent_fkey FOREIGN KEY (agent_id) REFERENCES public.ai_agents(id)
+  CONSTRAINT messages_agent_fkey FOREIGN KEY (agent_id) REFERENCES public.ai_agents(id),
+  CONSTRAINT messages_integration_fkey FOREIGN KEY (integration_id) REFERENCES public.messaging_integrations(id)
+);
+CREATE TABLE public.messaging_integrations (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  organization_id uuid NOT NULL,
+  user_id text NOT NULL,
+  platform text NOT NULL CHECK (platform = ANY (ARRAY['whatsapp'::text, 'telegram'::text, 'facebook'::text, 'instagram'::text, 'slack'::text, 'discord'::text, 'youtube'::text, 'tiktok'::text, 'gmail'::text, 'website-chat'::text])),
+  provider text,
+  name text NOT NULL,
+  config jsonb NOT NULL DEFAULT '{}'::jsonb,
+  status text DEFAULT 'inactive'::text CHECK (status = ANY (ARRAY['active'::text, 'inactive'::text, 'error'::text, 'pending'::text, 'connecting'::text])),
+  webhook_url text,
+  webhook_secret text,
+  last_sync_at timestamp with time zone,
+  error_message text,
+  created_by text NOT NULL,
+  created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+  display_order integer DEFAULT 0,
+  is_primary boolean DEFAULT false,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  CONSTRAINT messaging_integrations_pkey PRIMARY KEY (id),
+  CONSTRAINT messaging_integrations_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT messaging_integrations_user_fkey FOREIGN KEY (user_id) REFERENCES public.user_profiles(user_id)
 );
 CREATE TABLE public.organization_memberships (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -370,4 +440,19 @@ CREATE TABLE public.user_tokens (
   created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT user_tokens_pkey PRIMARY KEY (id),
   CONSTRAINT user_tokens_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id)
+);
+CREATE TABLE public.webhook_logs (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  organization_id uuid NOT NULL,
+  integration_id uuid,
+  platform text NOT NULL,
+  webhook_type text NOT NULL,
+  payload jsonb NOT NULL,
+  processing_status text DEFAULT 'pending'::text CHECK (processing_status = ANY (ARRAY['pending'::text, 'processed'::text, 'failed'::text])),
+  error_message text,
+  created_at timestamp with time zone DEFAULT now(),
+  processed_at timestamp with time zone,
+  CONSTRAINT webhook_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT webhook_logs_organization_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id),
+  CONSTRAINT webhook_logs_integration_fkey FOREIGN KEY (integration_id) REFERENCES public.messaging_integrations(id)
 );

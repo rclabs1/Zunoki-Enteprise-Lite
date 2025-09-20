@@ -88,11 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Maya will be loaded by ConditionalMayaAgent when needed
         setMayaReady(true)
       } else {
+        console.log('🔥 AuthContext - No user found, setting null state')
         setUser(null);
         setUserProfile(null);
         setMayaReady(false);
         setMayaLoading(false);
       }
+      console.log('🔥 AuthContext - Setting loading to false')
       setLoading(false);
     });
 

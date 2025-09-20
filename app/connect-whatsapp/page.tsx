@@ -214,6 +214,20 @@ export default function ConnectWhatsAppPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
       <div className="max-w-4xl mx-auto py-8">
+        {/* Back to Platforms Button */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/shell?module=platforms')}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Connect Platforms
+          </Button>
+        </div>
+
         <div className="text-center mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

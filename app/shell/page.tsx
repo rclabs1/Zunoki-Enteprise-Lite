@@ -50,9 +50,9 @@ export default function ShellPage() {
     if (currentModule && currentModule !== selectedModule) {
       setSelectedModule(currentModule)
     } else if (!selectedModule && !currentModule) {
-      // Set default module to maya-intelligence if none is selected
-      setSelectedModule('maya-intelligence')
-      navigateToModule('maya-intelligence')
+      // Set default module to zunoki-intelligence if none is selected
+      setSelectedModule('zunoki-intelligence')
+      navigateToModule('zunoki-intelligence')
     }
   }, [currentModule, selectedModule, navigateToModule])
 
@@ -234,8 +234,8 @@ export default function ShellPage() {
         <ModuleLoader currentModule={selectedModule} />
       </main>
 
-      {/* Maya Analytics Chat Panel - Hidden on Maya Intelligence page, minimized on others */}
-      {selectedModule !== 'maya-intelligence' && <MayaAnalyticsChatPanel defaultMinimized={true} />}
+      {/* Zunoki Analytics Chat Panel - Hidden on Zunoki Intelligence page, minimized on others */}
+      {selectedModule !== 'zunoki-intelligence' && <MayaAnalyticsChatPanel defaultMinimized={true} />}
     </div>
   )
 }

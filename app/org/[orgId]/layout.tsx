@@ -145,10 +145,10 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Error</h1>
           <p className="text-gray-600 mb-8">{error}</p>
           <button
-            onClick={() => router.push('/select-organization')}
+            onClick={() => router.push('/shell')}
             className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600"
           >
-            Select Organization
+            Go to Dashboard
           </button>
         </div>
       </div>
@@ -161,10 +161,10 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-green-900 mb-4">Organization Not Found</h1>
           <button
-            onClick={() => router.push('/select-organization')}
+            onClick={() => router.push('/shell')}
             className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600"
           >
-            Select Organization
+            Go to Dashboard
           </button>
         </div>
       </div>
@@ -201,10 +201,10 @@ export default function TenantLayout({ children }: TenantLayoutProps) {
                   </span>
 
                   <button
-                    onClick={() => router.push('/select-organization')}
+                    onClick={() => router.push('/shell')}
                     className="text-sm text-gray-700 hover:text-gray-900"
                   >
-                    Switch Organization
+                    Dashboard
                   </button>
                 </div>
               </div>

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zunoki AI-Powered Chat Widget Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        .chat-widget.open {
+            display: flex;
+        }
+        .chat-header {
+            background: #3b82f6;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+        }
+        .chat-input {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            border-radius: 0 0 15px 15px;
+        }
+        .chat-input input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+        .message.user {
+            background: #e3f2fd;
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.assistant {
+            background: #f5f5f5;
+            margin-right: auto;
+        }
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .quick-action {
+            background: #3b82f6;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+        }
+        .quick-action:hover {
+            background: #2563eb;
+        }
+        .chat-trigger {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+            z-index: 999;
+        }
+        .powered-by {
+            text-align: center;
+            padding: 10px;
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .config-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .config-item {
+            margin: 10px 0;
+        }
+        .config-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .config-item input, .config-item select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Zunoki AI-Powered Chat Widget Test</h1>
+            <p>Test the chat widget integration and see how conversations flow to the inbox</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>Widget Configuration</h2>
+            <div class="config-section">
+                <div>
+                    <div class="config-item">
+                        <label>Widget Name:</label>
+                        <input type="text" id="widgetName" value="Customer Support" />
+                    </div>
+                    <div class="config-item">
+                        <label>Business Type:</label>
+                        <select id="businessType">
+                            <option value="ecommerce">E-commerce Store</option>
+                            <option value="delivery">Food/Delivery Service</option>
+                            <option value="fintech">Fintech & Investment</option>
+                            <option value="saas">SaaS Platform</option>
+                            <option value="support">Customer Support</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>Welcome Message:</label>
+                        <input type="text" id="welcomeMessage" value="Hi! How can I help you today?" />
+                    </div>
+                </div>
+                <div>
+                    <div class="config-item">
+                        <label>Primary Color:</label>
+                        <input type="color" id="primaryColor" value="#3b82f6" />
+                    </div>
+                    <div class="config-item">
+                        <label>Visitor Name:</label>
+                        <input type="text" id="visitorName" value="Test User" />
+                    </div>
+                    <div class="config-item">
+                        <label>Visitor Email:</label>
+                        <input type="email" id="visitorEmail" value="test@example.com" />
+                    </div>
+                </div>
+            </div>
+            <button class="btn" onclick="updateWidget()">Update Widget</button>
+            <button class="btn" onclick="testConnection()">Test Connection</button>
+        </div>
+
+        <div class="demo-section">
+            <h2>Test Scenarios</h2>
+            <button class="btn" onclick="sendTestMessage('I need help with my order')">🛍️ Order Help</button>
+            <button class="btn" onclick="sendTestMessage('What are your investment options?')">💰 Investment Query</button>
+            <button class="btn" onclick="sendTestMessage('I want to speak to a human agent')">👨‍💼 Human Handoff</button>
+            <button class="btn" onclick="sendTestMessage('Can you send me the catalogue?')">📋 Catalogue Request</button>
+        </div>
+
+        <div class="demo-section">
+            <h2>Connection Status</h2>
+            <div id="statusContainer"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Conversation Flow</h2>
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Configure the widget settings above</li>
+                <li>Click the chat button in the bottom right to open the widget</li>
+                <li>Send messages and test different scenarios</li>
+                <li>Check your Zunoki inbox to see how conversations appear</li>
+                <li>Test assigning conversations to human agents or AI agents</li>
+                <li>Test seamless handoff to WhatsApp/Email</li>
+            </ol>
+            <p><strong>Note:</strong> This page uses the Zunoki Intelligent Chat Widget!</p>
+        </div>
+    </div>
+
+    <!-- Initialize Zunoki Widget Configuration -->
+    <script>
+        // Zunoki Widget Configuration (this is what customers get)
+        window.ZunokiWidget = {
+            orgId: 'test_org_123',
+            widgetId: 'test_widget_456',
+            apiUrl: window.location.origin + '/api/webhooks/chat-widget',
+            config: {
+                widgetName: 'Customer Support',
+                primaryColor: '#3b82f6',
+                position: 'bottom-right',
+                welcomeMessage: 'Hi! How can I help you today?',
+                businessType: 'support',
+                features: {}
+            }
+        };
+    </script>
+    <!-- Load Zunoki Widget -->
+    <script async src="/widget/zunoki-widget.js"></script>
+
+    <script>
+        // Test page configuration
+        let testConfig = {
+            widgetName: 'Customer Support',
+            businessType: 'support',
+            welcomeMessage: 'Hi! How can I help you today?',
+            primaryColor: '#3b82f6'
+        };
+
+        function toggleChat() {
+            const widget = document.getElementById('chatWidget');
+            const trigger = document.getElementById('chatTrigger');
+
+            if (widget.classList.contains('open')) {
+                widget.classList.remove('open');
+                trigger.style.display = 'block';
+            } else {
+                widget.classList.add('open');
+                trigger.style.display = 'none';
+            }
+        }
+
+        function updateWidget() {
+            // Update Zunoki Widget config
+            if (window.ZunokiWidget) {
+                window.ZunokiWidget.config.widgetName = document.getElementById('widgetName').value;
+                window.ZunokiWidget.config.businessType = document.getElementById('businessType').value;
+                window.ZunokiWidget.config.welcomeMessage = document.getElementById('welcomeMessage').value;
+                window.ZunokiWidget.config.primaryColor = document.getElementById('primaryColor').value;
+            }
+
+            // Store visitor info in localStorage for the widget
+            localStorage.setItem('zunoki_visitor_name', document.getElementById('visitorName').value);
+            localStorage.setItem('zunoki_visitor_email', document.getElementById('visitorEmail').value);
+
+            showStatus('Widget configuration updated! Refresh to see changes in the widget.', 'success');
+        }
+
+        function testConnection() {
+            showStatus('Testing connection to Zunoki API...', 'info');
+
+            // Test webhook endpoint
+            fetch('/api/webhooks/chat-widget', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: {
+                        id: 'test_' + Date.now(),
+                        content: 'Connection test from self-service widget',
+                        type: 'text',
+                        timestamp: new Date().toISOString()
+                    },
+                    visitor: {
+                        id: 'test_visitor_' + Date.now(),
+                        name: document.getElementById('visitorName').value,
+                        email: document.getElementById('visitorEmail').value,
+                        page_url: window.location.href,
+                        user_agent: navigator.userAgent,
+                        referrer: document.referrer
+                    },
+                    widget_id: 'test_widget_456'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    showStatus('✅ Connection successful! Check your Zunoki inbox for the test message.', 'success');
+                } else {
+                    showStatus('❌ Connection failed: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                showStatus('❌ Connection error: ' + error.message, 'error');
+            });
+        }
+
+        function sendMessage(content) {
+            // Add user message to chat
+            addMessage(content, 'user');
+
+            // Send to webhook
+            fetch('/api/webhooks/chat-widget', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: {
+                        id: 'msg_' + Date.now(),
+                        content: content,
+                        type: 'text',
+                        timestamp: new Date().toISOString()
+                    },
+                    visitor: widgetConfig.visitor,
+                    widget_id: 'test_widget'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok && data.response) {
+                    // Add AI response
+                    addMessage(data.response.message, 'assistant');
+
+                    // Add quick actions if available
+                    if (data.response.quick_actions && data.response.quick_actions.length > 0) {
+                        addQuickActions(data.response.quick_actions);
+                    }
+
+                    showStatus(`📬 Message sent to inbox! Conversation ID: ${data.response.conversation_context?.conversation_id}`, 'success');
+                } else {
+                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                    showStatus('Error sending message: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+                showStatus('Network error: ' + error.message, 'error');
+            });
+        }
+
+        function sendTestMessage(content) {
+            showStatus(`📝 Test message: "${content}" - Use the actual widget in bottom right to send!`, 'success');
+        }
+
+        function addMessage(content, role) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = `<div>${content}</div>`;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addQuickActions(actions) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'quick-actions';
+
+            actions.forEach(action => {
+                const button = document.createElement('button');
+                button.className = 'quick-action';
+                button.textContent = action.icon ? `${action.icon} ${action.text}` : action.text;
+                button.onclick = () => handleQuickAction(action);
+                actionsDiv.appendChild(button);
+            });
+
+            messagesContainer.appendChild(actionsDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function handleQuickAction(action) {
+            switch(action.action) {
+                case 'handoff_whatsapp':
+                    addMessage('Initiating handoff to WhatsApp...', 'assistant');
+                    showStatus('🟢 Handoff to WhatsApp initiated - check your Zunoki inbox', 'success');
+                    break;
+                case 'handoff_email':
+                    addMessage('Initiating handoff to Email...', 'assistant');
+                    showStatus('📧 Handoff to Email initiated - check your Zunoki inbox', 'success');
+                    break;
+                case 'send_catalogue':
+                    addMessage('Sending catalogue to your preferred channel...', 'assistant');
+                    showStatus('📋 Catalogue request logged - check your Zunoki inbox', 'success');
+                    break;
+                default:
+                    sendMessage(action.text);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                const input = document.getElementById('messageInput');
+                if (input.value.trim()) {
+                    sendMessage(input.value.trim());
+                    input.value = '';
+                }
+            }
+        }
+
+        function showStatus(message, type) {
+            const container = document.getElementById('statusContainer');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            container.appendChild(statusDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateWidget();
+            showStatus('Zunoki AI-Powered Chat Widget test page loaded', 'success');
+        });
+    </script>
+</body>
+</html>

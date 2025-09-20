@@ -95,7 +95,8 @@ export default function WhatsAppOnboardingBanner() {
   };
 
   const connectWhatsApp = () => {
-    router.push('/connect-whatsapp');
+    // Navigate to shell platforms module instead of standalone page
+    router.push('/shell?module=platforms');
   };
 
   const viewConversations = () => {

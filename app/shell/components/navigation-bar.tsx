@@ -35,7 +35,7 @@ export function NavigationBar({ currentModule, onModuleSelect }: NavigationBarPr
   }
 
   const modules = [
-    { id: 'maya-intelligence', label: 'Zunoki Intelligence', icon: '🧠', description: 'AI-Powered Intelligent Analytics' },
+    { id: 'zunoki-intelligence', label: 'Zunoki Intelligence', icon: '🧠', description: 'AI-Powered Intelligent Analytics' },
     { id: 'conversations', label: 'Inbox', icon: '💬', description: 'Unified Inbox' },
     { id: 'campaigns', label: 'Broadcasts', icon: '📱', description: 'Message Campaigns' },
     { id: 'platforms', label: 'Connect Platforms', icon: '🔗', description: 'Connect Messaging Platforms' },

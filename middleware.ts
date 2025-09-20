@@ -95,10 +95,19 @@ function handleNoTenantRouting(request: NextRequest) {
     '/invite',
     '/setup',
     '/onboarding',
-    '/select-organization',
     '/shell', // Allow shell route - OnboardingGuard handles auth
     '/connect-messaging', // Allow connect messaging page
-    '/connect-platforms', // Allow connect platforms page
+    '/connect-whatsapp', // Allow connect WhatsApp page
+    '/connect-telegram', // Allow connect Telegram page
+    '/connect-gmail', // Allow connect Gmail page
+    '/connect-email', // Allow connect custom email page
+    '/connect-sms', // Allow connect SMS page
+    '/connect-slack', // Allow connect Slack page
+    '/connect-discord', // Allow connect Discord page
+    '/connect-facebook', // Allow connect Facebook page
+    '/connect-instagram', // Allow connect Instagram page
+    '/connect-widget', // Allow connect chat widget page
+    '/test-chat-widget.html', // Test page for chat widget (simulates customer website)
   ];
 
   if (publicPaths.includes(pathname) || pathname.startsWith('/auth/') || pathname.startsWith('/onboarding/') || pathname.startsWith('/org/') || pathname.startsWith('/invite/')) {
@@ -106,9 +115,9 @@ function handleNoTenantRouting(request: NextRequest) {
   }
 
   // For authenticated users trying to access app routes,
-  // redirect to select-organization which handles subscription routing
-  // This lets select-org route users based on payment status and org count
-  const url = new URL('/select-organization', request.url);
+  // redirect to shell which has OnboardingGuard to handle payment status
+  // Unpaid users will be redirected to onboarding/plans, paid users to dashboard
+  const url = new URL('/shell', request.url);
   return NextResponse.redirect(url);
 }
 
