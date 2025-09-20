@@ -800,11 +800,11 @@ export function ConversationView({ onRealtimeStatusChange }: ConversationViewPro
         const data = await response.json();
         console.log('✅ API Response data:', data);
         
-        if (data.success && data.conversations && data.conversations.length > 0) {
-          console.log(`🎉 Found ${data.conversations.length} REAL conversations`);
-          
-          // Convert API data to component format  
-          const apiConversations = data.conversations.reduce((acc: any, conv: any) => {
+        if (data.success && data.data && data.data.conversations && data.data.conversations.length > 0) {
+          console.log(`🎉 Found ${data.data.conversations.length} REAL conversations`);
+
+          // Convert API data to component format
+          const apiConversations = data.data.conversations.reduce((acc: any, conv: any) => {
             acc[conv.id] = conv;
             return acc;
           }, {});

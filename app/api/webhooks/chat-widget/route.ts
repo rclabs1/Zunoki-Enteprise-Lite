@@ -14,11 +14,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the integration using messaging_integrations table
+    console.log('🔍 WEBHOOK DEBUG - Looking for integration with widget_id:', widget_id);
+    console.log('🔍 WEBHOOK DEBUG - Message content:', message?.content);
+    console.log('🔍 WEBHOOK DEBUG - Visitor ID:', visitor?.id);
+
     const { data: integration } = await supabase
       .from('messaging_integrations')
       .select('*')
       .eq('platform', 'website-chat')
       .eq('status', 'active')
+      .contains('config', { widgetId: widget_id })
       .single();
 
     if (!integration) {
@@ -26,58 +31,150 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Create or find contact
+    // Create or find contact - production-grade approach
     const visitorName = visitor.name || visitor.email || `Visitor ${visitor.id}`;
-    const { data: contact, error: contactError } = await supabase
+
+    // Smart returning visitor detection
+    // 1. First try to find by visitor_id (most accurate)
+    let { data: contact } = await supabase
       .from('contacts')
-      .upsert({
-        organization_id: integration.organization_id,
-        name: visitorName,
-        email: visitor.email || null,
-        metadata: {
-          visitor_id: visitor.id,
-          widget_id: widget_id,
-          platform: 'website-chat',
-          user_agent: visitor.user_agent,
-          ip_address: visitor.ip_address,
-          referrer: visitor.referrer,
-          page_url: visitor.page_url
-        },
-        created_by: integration.created_by
-      }, {
-        onConflict: 'organization_id,metadata->>visitor_id',
-        ignoreDuplicates: false
-      })
       .select()
+      .eq('organization_id', integration.organization_id)
+      .contains('metadata', { visitor_id: visitor.id })
       .single();
+
+    // 2. If not found by visitor_id, check for returning visitor by IP address
+    if (!contact && visitor.ip_address) {
+      console.log('🔍 Visitor ID not found, checking for returning visitor by IP:', visitor.ip_address);
+
+      const { data: ipContact } = await supabase
+        .from('contacts')
+        .select()
+        .eq('organization_id', integration.organization_id)
+        .contains('metadata', { ip_address: visitor.ip_address })
+        .eq('platform', 'website-chat')
+        .order('last_interaction', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (ipContact) {
+        console.log('🎯 Found returning visitor by IP! Contact ID:', ipContact.id);
+
+        // Update the existing contact with new visitor_id (visitor came back with new session)
+        const { data: updatedContact } = await supabase
+          .from('contacts')
+          .update({
+            metadata: {
+              ...ipContact.metadata,
+              visitor_id: visitor.id,
+              widget_id: widget_id,
+              user_agent: visitor.user_agent,
+              ip_address: visitor.ip_address,
+              referrer: visitor.referrer,
+              page_url: visitor.page_url,
+              previous_visitor_ids: [
+                ...(ipContact.metadata.previous_visitor_ids || []),
+                ipContact.metadata.visitor_id
+              ].filter(Boolean),
+              session_count: (ipContact.metadata.session_count || 1) + 1,
+              returning_visitor: true,
+              last_visit: new Date().toISOString()
+            },
+            last_interaction: new Date().toISOString(),
+            name: visitor.name || visitor.email || ipContact.name || `Returning Visitor ${visitor.id.split('_').pop()}`
+          })
+          .eq('id', ipContact.id)
+          .select()
+          .single();
+
+        contact = updatedContact;
+      }
+    }
+
+    let contactError = null;
+
+    // 3. If still not found, create new contact
+    if (!contact) {
+      const { data: newContact, error: createError } = await supabase
+        .from('contacts')
+        .insert({
+          organization_id: integration.organization_id,
+          name: visitorName,
+          email: visitor.email || null,
+          platform: 'website-chat',
+          last_interaction: new Date().toISOString(),
+          metadata: {
+            visitor_id: visitor.id,
+            widget_id: widget_id,
+            platform: 'website-chat',
+            user_agent: visitor.user_agent,
+            ip_address: visitor.ip_address,
+            referrer: visitor.referrer,
+            page_url: visitor.page_url,
+            session_count: 1,
+            returning_visitor: false,
+            first_visit: new Date().toISOString(),
+            last_visit: new Date().toISOString()
+          },
+          created_by: integration.created_by
+        })
+        .select()
+        .single();
+
+      contact = newContact;
+      contactError = createError;
+    }
 
     if (contactError) {
       console.error('Error creating/finding contact:', contactError);
       return NextResponse.json({ error: 'Failed to create contact' }, { status: 500 });
     }
 
-    // Create or find conversation
-    const { data: conversation, error: conversationError } = await supabase
+    // Create or find conversation - production-grade approach
+    // First try to find existing active conversation for this contact
+    let { data: conversation } = await supabase
       .from('conversations')
-      .upsert({
-        organization_id: integration.organization_id,
-        contact_id: contact.id,
-        title: `Website chat with ${visitorName}`,
-        channel: 'chat-widget',
-        status: 'active',
-        metadata: {
-          widget_id: widget_id,
-          visitor_id: visitor.id,
-          integration_id: integration.id,
-          page_url: visitor.page_url
-        },
-        last_message_at: new Date().toISOString()
-      }, {
-        onConflict: 'organization_id,contact_id,channel',
-        ignoreDuplicates: false
-      })
       .select()
+      .eq('organization_id', integration.organization_id)
+      .eq('contact_id', contact.id)
+      .eq('channel', 'chat-widget')
+      .eq('status', 'active')
       .single();
+
+    let conversationError = null;
+
+    // If no active conversation found, create new one
+    if (!conversation) {
+      const { data: newConversation, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          organization_id: integration.organization_id,
+          contact_id: contact.id,
+          title: `Website chat with ${visitorName}`,
+          channel: 'chat-widget',
+          status: 'active',
+          metadata: {
+            widget_id: widget_id,
+            visitor_id: visitor.id,
+            integration_id: integration.id,
+            page_url: visitor.page_url
+          },
+          last_message_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      conversation = newConversation;
+      conversationError = createError;
+    } else {
+      // Update last_message_at for existing conversation
+      const { error: updateError } = await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversation.id);
+
+      conversationError = updateError;
+    }
 
     if (conversationError) {
       console.error('Error creating/finding conversation:', conversationError);

@@ -25,13 +25,16 @@ import {
   Bot,
   Hash,
   ArrowRight,
+  ArrowLeft,
   Globe,
   Phone,
   Send,
   Search,
   Filter,
   Settings,
-  Loader2
+  Loader2,
+  Layers,
+  Monitor
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -233,6 +236,440 @@ const whatsappProviders: WhatsAppProvider[] = [
     cost: 'free'
   }
 ];
+
+// Platform Selection and Chat Widget Setup Flow
+interface WebsiteChatSetupFlowProps {
+  config: any;
+  setConfig: (config: any) => void;
+  onConnect: () => void;
+  onCancel: () => void;
+}
+
+const platformOptions = [
+  {
+    id: 'wordpress',
+    name: 'WordPress',
+    description: 'Add to WordPress site (functions.php or plugin)',
+    icon: <Globe className="h-5 w-5" />,
+    category: 'CMS'
+  },
+  {
+    id: 'woocommerce',
+    name: 'WooCommerce',
+    description: 'WordPress with e-commerce features',
+    icon: <Bot className="h-5 w-5" />,
+    category: 'E-commerce'
+  },
+  {
+    id: 'shopify',
+    name: 'Shopify',
+    description: 'Leading e-commerce platform',
+    icon: <Bot className="h-5 w-5" />,
+    category: 'E-commerce'
+  },
+  {
+    id: 'webflow',
+    name: 'Webflow',
+    description: 'Visual web design platform',
+    icon: <Layers className="h-5 w-5" />,
+    category: 'Website Builder'
+  },
+  {
+    id: 'wix',
+    name: 'Wix',
+    description: 'Popular website builder',
+    icon: <Globe className="h-5 w-5" />,
+    category: 'Website Builder'
+  },
+  {
+    id: 'wix-ecommerce',
+    name: 'Wix eCommerce',
+    description: 'Wix with e-commerce features',
+    icon: <Bot className="h-5 w-5" />,
+    category: 'E-commerce'
+  },
+  {
+    id: 'squarespace',
+    name: 'Squarespace',
+    description: 'Design-focused website builder',
+    icon: <Globe className="h-5 w-5" />,
+    category: 'Website Builder'
+  },
+  {
+    id: 'squarespace-commerce',
+    name: 'Squarespace Commerce',
+    description: 'Squarespace with e-commerce',
+    icon: <Bot className="h-5 w-5" />,
+    category: 'E-commerce'
+  },
+  {
+    id: 'bubble',
+    name: 'Bubble',
+    description: 'No-code app development platform',
+    icon: <Zap className="h-5 w-5" />,
+    category: 'No-Code'
+  },
+  {
+    id: 'framer',
+    name: 'Framer',
+    description: 'Design and interactive prototyping',
+    icon: <Layers className="h-5 w-5" />,
+    category: 'Design Tool'
+  },
+  {
+    id: 'carrd',
+    name: 'Carrd',
+    description: 'Simple one-page sites',
+    icon: <Globe className="h-5 w-5" />,
+    category: 'Website Builder'
+  },
+  {
+    id: 'custom-html',
+    name: 'Custom HTML/JS',
+    description: 'Direct JavaScript integration',
+    icon: <Monitor className="h-5 w-5" />,
+    category: 'Custom'
+  }
+];
+
+function WebsiteChatSetupFlow({ config, setConfig, onConnect, onCancel }: WebsiteChatSetupFlowProps) {
+  const [currentStep, setCurrentStep] = useState<'platform' | 'config' | 'embed'>('platform');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('');
+
+  const handlePlatformSelect = (platformId: string) => {
+    setSelectedPlatform(platformId);
+    setConfig({ ...config, deploymentPlatform: platformId });
+    setCurrentStep('config');
+  };
+
+  const handleConfigComplete = () => {
+    setCurrentStep('embed');
+  };
+
+  const renderPlatformSelection = () => (
+    <div className="space-y-6">
+      <Alert>
+        <Bot className="h-4 w-4" />
+        <AlertDescription>
+          Where would you like to deploy your Zunoki Intelligent Chat Widget? Choose your platform for customized integration instructions.
+        </AlertDescription>
+      </Alert>
+
+      <div>
+        <h4 className="font-medium text-sm mb-4">Select Your Platform</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-4xl">
+          {platformOptions.map((platform) => (
+            <div
+              key={platform.id}
+              onClick={() => handlePlatformSelect(platform.id)}
+              className="p-4 border border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 cursor-pointer transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="text-green-600 mt-0.5 flex-shrink-0">
+                  {platform.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h5 className="font-medium text-sm truncate">{platform.name}</h5>
+                    <Badge variant="outline" className="text-xs flex-shrink-0 bg-green-50 text-green-700 border-green-200">
+                      {platform.category}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {platform.description}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderConfiguration = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCurrentStep('platform')}
+          className="p-1 h-auto"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <Alert className="flex-1">
+          <Bot className="h-4 w-4" />
+          <AlertDescription>
+            Configure your Zunoki Intelligent Chat Widget for{' '}
+            <strong>{platformOptions.find(p => p.id === selectedPlatform)?.name}</strong>
+          </AlertDescription>
+        </Alert>
+      </div>
+
+      {/* Basic Configuration */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-sm">Basic Settings</h4>
+        <div>
+          <Label htmlFor="widgetName">Widget Name</Label>
+          <Input
+            id="widgetName"
+            placeholder="Zunoki Customer Support"
+            value={config.widgetName || ''}
+            onChange={(e) => setConfig({...config, widgetName: e.target.value})}
+          />
+        </div>
+        <div>
+          <Label htmlFor="domainWhitelist">Allowed Domains (Optional)</Label>
+          <Input
+            id="domainWhitelist"
+            placeholder="yoursite.com, subdomain.yoursite.com"
+            value={config.domainWhitelist || ''}
+            onChange={(e) => setConfig({...config, domainWhitelist: e.target.value})}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Leave empty to allow all domains
+          </p>
+        </div>
+      </div>
+
+      {/* Appearance */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-sm">Appearance</h4>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="primaryColor">Primary Color</Label>
+            <Input
+              id="primaryColor"
+              type="color"
+              value={config.primaryColor || '#3b82f6'}
+              onChange={(e) => setConfig({...config, primaryColor: e.target.value})}
+            />
+          </div>
+          <div>
+            <Label htmlFor="position">Widget Position</Label>
+            <Select value={config.position || 'bottom-right'} onValueChange={(value) => setConfig({...config, position: value})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                <SelectItem value="top-right">Top Right</SelectItem>
+                <SelectItem value="top-left">Top Left</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-sm">Messages & Automation</h4>
+        <div>
+          <Label htmlFor="welcomeMessage">Welcome Message</Label>
+          <Input
+            id="welcomeMessage"
+            placeholder="Hi! I'm your AI assistant. How can I help you today?"
+            value={config.welcomeMessage || ''}
+            onChange={(e) => setConfig({...config, welcomeMessage: e.target.value})}
+          />
+        </div>
+        <div>
+          <Label htmlFor="businessType">Business Type</Label>
+          <Select value={config.businessType || 'ecommerce'} onValueChange={(value) => setConfig({...config, businessType: value})}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ecommerce">E-commerce Store</SelectItem>
+              <SelectItem value="delivery">Food/Delivery Service</SelectItem>
+              <SelectItem value="saas">SaaS Platform</SelectItem>
+              <SelectItem value="support">Customer Support</SelectItem>
+              <SelectItem value="sales">Sales & Lead Gen</SelectItem>
+              <SelectItem value="booking">Booking & Appointments</SelectItem>
+              <SelectItem value="fintech">Fintech & Investment</SelectItem>
+              <SelectItem value="mutual-funds">Mutual Funds</SelectItem>
+              <SelectItem value="aif-funds">AIF & Alternative Funds</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button onClick={handleConfigComplete} className="flex-1">
+          Generate Integration Code
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderPlatformInstructions = () => {
+    const platform = platformOptions.find(p => p.id === selectedPlatform);
+
+    const getPlatformInstructions = () => {
+      switch (selectedPlatform) {
+        case 'wordpress':
+          return {
+            title: 'WordPress Integration',
+            steps: [
+              'Copy the JavaScript code below',
+              'Go to your WordPress admin → Appearance → Theme Editor',
+              'Edit functions.php and paste the code before the closing ?> tag',
+              'Or use a plugin like "Insert Headers and Footers" and paste in the footer section',
+              'Save and the widget will appear on your site'
+            ]
+          };
+        case 'woocommerce':
+          return {
+            title: 'WooCommerce Integration',
+            steps: [
+              'Copy the JavaScript code below',
+              'Go to WordPress admin → Appearance → Customize → Additional CSS',
+              'Or add to your theme\'s footer.php file before </body>',
+              'The widget will include e-commerce features for order tracking',
+              'Save and test the widget on your store'
+            ]
+          };
+        case 'shopify':
+          return {
+            title: 'Shopify Integration',
+            steps: [
+              'Copy the JavaScript code below',
+              'Go to Shopify admin → Online Store → Themes',
+              'Click "Actions" → "Edit code"',
+              'Open theme.liquid and paste before </body>',
+              'Save and the widget will appear on your store'
+            ]
+          };
+        case 'webflow':
+          return {
+            title: 'Webflow Integration',
+            steps: [
+              'Copy the JavaScript code below',
+              'In Webflow Designer, go to Project Settings',
+              'Go to Custom Code → Footer Code',
+              'Paste the code and publish',
+              'Widget will appear on your published site'
+            ]
+          };
+        case 'custom-html':
+          return {
+            title: 'Custom HTML Integration',
+            steps: [
+              'Copy the JavaScript code below',
+              'Paste it before the closing </body> tag of your HTML',
+              'Upload your files to your web server',
+              'The widget will appear on your website',
+              'Test the integration'
+            ]
+          };
+        default:
+          return {
+            title: `${platform?.name} Integration`,
+            steps: [
+              'Copy the JavaScript code below',
+              'Add it to your website\'s footer or custom code section',
+              'Follow your platform\'s documentation for adding custom JavaScript',
+              'Save and publish your changes',
+              'The widget will appear on your site'
+            ]
+          };
+      }
+    };
+
+    const instructions = getPlatformInstructions();
+    const embedCode = `<!-- Zunoki Intelligent Chat Widget -->
+<script>
+  window.ZunokiChatWidget = {
+    widgetId: '${config.widgetId || 'widget_' + Date.now()}',
+    widgetName: '${config.widgetName || 'Customer Support'}',
+    primaryColor: '${config.primaryColor || '#3b82f6'}',
+    position: '${config.position || 'bottom-right'}',
+    welcomeMessage: '${config.welcomeMessage || 'Hi! How can I help you today?'}',
+    businessType: '${config.businessType || 'ecommerce'}',
+    webhookUrl: '${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/chat-widget'
+  };
+</script>
+<script src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget/zunoki-widget.js" async></script>
+<!-- End Zunoki Widget -->`;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentStep('config')}
+            className="p-1 h-auto"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Alert className="flex-1">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>
+              Your {platform?.name} integration code is ready!
+            </AlertDescription>
+          </Alert>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm">{instructions.title}</h4>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h5 className="font-medium text-sm text-blue-800 mb-2">Integration Steps:</h5>
+            <ol className="text-sm text-blue-700 space-y-1">
+              {instructions.steps.map((step, index) => (
+                <li key={index} className="flex gap-2">
+                  <span className="font-medium">{index + 1}.</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Integration Code</Label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(embedCode);
+                // toast success
+              }}
+            >
+              Copy Code
+            </Button>
+          </div>
+          <div className="bg-gray-50 border rounded-lg p-3">
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap overflow-x-auto">
+              {embedCode}
+            </pre>
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <Button variant="outline" onClick={onCancel} className="flex-1">
+            Close
+          </Button>
+          <Button onClick={onConnect} className="flex-1">
+            Save Integration
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {currentStep === 'platform' && renderPlatformSelection()}
+      {currentStep === 'config' && renderConfiguration()}
+      {currentStep === 'embed' && renderPlatformInstructions()}
+    </div>
+  );
+}
 
 export default function PlatformsModule() {
   const router = useRouter();
@@ -1627,189 +2064,12 @@ function PlatformConfigModal({
 
       case 'website-chat':
         return (
-          <div className="space-y-6">
-            <Alert>
-              <Bot className="h-4 w-4" />
-              <AlertDescription>
-                Configure your Zunoki Intelligent Chat Widget with advanced customer support features including order tracking, sales automation, and smart notifications.
-              </AlertDescription>
-            </Alert>
-
-            {/* Basic Configuration */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm">Basic Settings</h4>
-              <div>
-                <Label htmlFor="widgetName">Widget Name</Label>
-                <Input
-                  id="widgetName"
-                  placeholder="Zunoki Customer Support"
-                  value={config.widgetName || ''}
-                  onChange={(e) => setConfig({...config, widgetName: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="domainWhitelist">Allowed Domains (Optional)</Label>
-                <Input
-                  id="domainWhitelist"
-                  placeholder="yoursite.com, subdomain.yoursite.com"
-                  value={config.domainWhitelist || ''}
-                  onChange={(e) => setConfig({...config, domainWhitelist: e.target.value})}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty to allow all domains
-                </p>
-              </div>
-            </div>
-
-            {/* Appearance */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm">Appearance</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="primaryColor">Primary Color</Label>
-                  <Input
-                    id="primaryColor"
-                    type="color"
-                    value={config.primaryColor || '#3b82f6'}
-                    onChange={(e) => setConfig({...config, primaryColor: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="position">Widget Position</Label>
-                  <Select value={config.position || 'bottom-right'} onValueChange={(value) => setConfig({...config, position: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                      <SelectItem value="top-right">Top Right</SelectItem>
-                      <SelectItem value="top-left">Top Left</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm">Messages & Automation</h4>
-              <div>
-                <Label htmlFor="welcomeMessage">Welcome Message</Label>
-                <Input
-                  id="welcomeMessage"
-                  placeholder="Hi! I'm your AI assistant. How can I help you today?"
-                  value={config.welcomeMessage || ''}
-                  onChange={(e) => setConfig({...config, welcomeMessage: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="businessType">Business Type</Label>
-                <Select value={config.businessType || 'ecommerce'} onValueChange={(value) => setConfig({...config, businessType: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ecommerce">E-commerce Store</SelectItem>
-                    <SelectItem value="delivery">Food/Delivery Service</SelectItem>
-                    <SelectItem value="saas">SaaS Platform</SelectItem>
-                    <SelectItem value="support">Customer Support</SelectItem>
-                    <SelectItem value="sales">Sales & Lead Gen</SelectItem>
-                    <SelectItem value="booking">Booking & Appointments</SelectItem>
-                    <SelectItem value="fintech">Fintech & Investment</SelectItem>
-                    <SelectItem value="mutual-funds">Mutual Funds</SelectItem>
-                    <SelectItem value="aif-funds">AIF & Alternative Funds</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Advanced Features */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm">Advanced Features</h4>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="orderTracking"
-                    checked={config.features?.orderTracking || false}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      features: { ...config.features, orderTracking: e.target.checked }
-                    })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="orderTracking" className="text-sm">Order Tracking & Status Updates</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="salesAutomation"
-                    checked={config.features?.salesAutomation || false}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      features: { ...config.features, salesAutomation: e.target.checked }
-                    })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="salesAutomation" className="text-sm">Sales Automation & Lead Qualification</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="smartNotifications"
-                    checked={config.features?.smartNotifications || false}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      features: { ...config.features, smartNotifications: e.target.checked }
-                    })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="smartNotifications" className="text-sm">Smart Notifications & Proactive Messages</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="multilingual"
-                    checked={config.features?.multilingual || false}
-                    onChange={(e) => setConfig({
-                      ...config,
-                      features: { ...config.features, multilingual: e.target.checked }
-                    })}
-                    className="rounded"
-                  />
-                  <Label htmlFor="multilingual" className="text-sm">Multi-language Support</Label>
-                </div>
-              </div>
-            </div>
-
-            {/* API Integration */}
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm">API Integration (Optional)</h4>
-              <div>
-                <Label htmlFor="apiEndpoint">Order/Customer API Endpoint</Label>
-                <Input
-                  id="apiEndpoint"
-                  placeholder="https://api.yourstore.com/orders"
-                  value={config.apiEndpoint || ''}
-                  onChange={(e) => setConfig({...config, apiEndpoint: e.target.value})}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  For order tracking and customer data integration
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="apiKey">API Key</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="Your API key for data access"
-                  value={config.apiKey || ''}
-                  onChange={(e) => setConfig({...config, apiKey: e.target.value})}
-                />
-              </div>
-            </div>
-          </div>
+          <WebsiteChatSetupFlow
+            config={config}
+            setConfig={setConfig}
+            onConnect={onConnect}
+            onCancel={onCancel}
+          />
         );
 
       default:

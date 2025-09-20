@@ -175,6 +175,79 @@
         .btn:hover {
             background: #2563eb;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .code-textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            background: #f8f9fa;
+        }
+        .btn-primary {
+            background: #28a745;
+            margin-top: 15px;
+        }
+        .btn-primary:hover {
+            background: #218838;
+        }
+        .integration-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .integration-status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .integration-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -185,33 +258,17 @@
         </div>
 
         <div class="demo-section">
-            <h2>Widget Configuration</h2>
+            <h2>Widget Integration</h2>
+            <div id="integrationStatus" class="integration-status inactive">
+                ❌ No integration loaded - Paste your Zunoki widget code to get started
+            </div>
             <div class="config-section">
                 <div>
-                    <div class="config-item">
-                        <label>Widget Name:</label>
-                        <input type="text" id="widgetName" value="Customer Support" />
-                    </div>
-                    <div class="config-item">
-                        <label>Business Type:</label>
-                        <select id="businessType">
-                            <option value="ecommerce">E-commerce Store</option>
-                            <option value="delivery">Food/Delivery Service</option>
-                            <option value="fintech">Fintech & Investment</option>
-                            <option value="saas">SaaS Platform</option>
-                            <option value="support">Customer Support</option>
-                        </select>
-                    </div>
-                    <div class="config-item">
-                        <label>Welcome Message:</label>
-                        <input type="text" id="welcomeMessage" value="Hi! How can I help you today?" />
-                    </div>
+                    <button class="btn btn-primary" onclick="openIntegrationModal()">📋 Paste Integration Code</button>
+                    <button class="btn" onclick="testConnection()">🔗 Test Connection</button>
+                    <button class="btn" onclick="clearIntegration()">🗑️ Clear Integration</button>
                 </div>
                 <div>
-                    <div class="config-item">
-                        <label>Primary Color:</label>
-                        <input type="color" id="primaryColor" value="#3b82f6" />
-                    </div>
                     <div class="config-item">
                         <label>Visitor Name:</label>
                         <input type="text" id="visitorName" value="Test User" />
@@ -222,8 +279,6 @@
                     </div>
                 </div>
             </div>
-            <button class="btn" onclick="updateWidget()">Update Widget</button>
-            <button class="btn" onclick="testConnection()">Test Connection</button>
         </div>
 
         <div class="demo-section">
@@ -251,6 +306,45 @@
                 <li>Test seamless handoff to WhatsApp/Email</li>
             </ol>
             <p><strong>Note:</strong> This page uses the Zunoki Intelligent Chat Widget!</p>
+        </div>
+    </div>
+
+    <!-- Integration Code Modal -->
+    <div id="integrationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🚀 Paste Your Zunoki Integration Code</h2>
+                <span class="close" onclick="closeIntegrationModal()">&times;</span>
+            </div>
+            <div>
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Go to your Zunoki Connect page and create a Website Chat integration</li>
+                    <li>Copy the entire JavaScript code from the integration page</li>
+                    <li>Paste it in the text area below</li>
+                    <li>Click "Load Integration" to test with real data</li>
+                </ol>
+                <textarea id="integrationCode" class="code-textarea" placeholder="Paste your Zunoki integration code here...
+
+Example:
+<!-- Zunoki Intelligent Chat Widget -->
+<script>
+  window.ZunokiWidget = {
+    orgId: 'your-org-id',
+    widgetId: 'your-widget-id',
+    apiUrl: 'your-api-url',
+    config: {
+      widgetName: 'Your Widget Name',
+      primaryColor: '#3b82f6',
+      // ... other config
+    }
+  };
+</script>
+<script async src='your-widget-script-url'></script>
+<!-- End Zunoki Widget -->"></textarea>
+                <button class="btn btn-primary" onclick="loadIntegration()">🔧 Load Integration</button>
+                <button class="btn" onclick="closeIntegrationModal()">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -296,20 +390,123 @@
             }
         }
 
-        function updateWidget() {
-            // Update Zunoki Widget config
-            if (window.ZunokiWidget) {
-                window.ZunokiWidget.config.widgetName = document.getElementById('widgetName').value;
-                window.ZunokiWidget.config.businessType = document.getElementById('businessType').value;
-                window.ZunokiWidget.config.welcomeMessage = document.getElementById('welcomeMessage').value;
-                window.ZunokiWidget.config.primaryColor = document.getElementById('primaryColor').value;
+        // Modal functions
+        function openIntegrationModal() {
+            document.getElementById('integrationModal').style.display = 'block';
+        }
+
+        function closeIntegrationModal() {
+            document.getElementById('integrationModal').style.display = 'none';
+        }
+
+        function loadIntegration() {
+            const code = document.getElementById('integrationCode').value.trim();
+
+            if (!code) {
+                showStatus('❌ Please paste your integration code first', 'error');
+                return;
             }
 
-            // Store visitor info in localStorage for the widget
-            localStorage.setItem('zunoki_visitor_name', document.getElementById('visitorName').value);
-            localStorage.setItem('zunoki_visitor_email', document.getElementById('visitorEmail').value);
+            try {
+                // Extract ZunokiWidget configuration from the pasted code
+                const configMatch = code.match(/window\.ZunokiWidget\s*=\s*({[\s\S]*?});/);
 
-            showStatus('Widget configuration updated! Refresh to see changes in the widget.', 'success');
+                if (!configMatch) {
+                    showStatus('❌ Invalid integration code - cannot find ZunokiWidget configuration', 'error');
+                    return;
+                }
+
+                // Parse the configuration
+                const configStr = configMatch[1];
+                const config = eval('(' + configStr + ')'); // Note: In production, use safer JSON parsing
+
+                // Update the global ZunokiWidget
+                window.ZunokiWidget = config;
+
+                // Store in localStorage for persistence
+                localStorage.setItem('zunoki_integration_code', code);
+                localStorage.setItem('zunoki_widget_config', JSON.stringify(config));
+
+                // Update status
+                updateIntegrationStatus(config);
+
+                // Store visitor info
+                localStorage.setItem('zunoki_visitor_name', document.getElementById('visitorName').value);
+                localStorage.setItem('zunoki_visitor_email', document.getElementById('visitorEmail').value);
+
+                showStatus('✅ Integration loaded successfully! Widget is now active.', 'success');
+                closeIntegrationModal();
+
+                // Reload the widget script if it exists
+                reloadWidgetScript(code);
+
+            } catch (error) {
+                console.error('Error loading integration:', error);
+                showStatus('❌ Error parsing integration code: ' + error.message, 'error');
+            }
+        }
+
+        function clearIntegration() {
+            localStorage.removeItem('zunoki_integration_code');
+            localStorage.removeItem('zunoki_widget_config');
+
+            // Reset to default test config
+            window.ZunokiWidget = {
+                orgId: 'test_org_123',
+                widgetId: 'test_widget_456',
+                apiUrl: window.location.origin + '/api/webhooks/chat-widget',
+                config: {
+                    widgetName: 'Customer Support',
+                    primaryColor: '#3b82f6',
+                    position: 'bottom-right',
+                    welcomeMessage: 'Hi! How can I help you today?',
+                    businessType: 'support',
+                    features: {}
+                }
+            };
+
+            updateIntegrationStatus(null);
+            showStatus('🗑️ Integration cleared - using default test configuration', 'success');
+        }
+
+        function updateIntegrationStatus(config) {
+            const statusDiv = document.getElementById('integrationStatus');
+
+            if (config && config.orgId && config.widgetId) {
+                statusDiv.className = 'integration-status active';
+                statusDiv.innerHTML = `
+                    ✅ Integration Active<br>
+                    <small>Org: ${config.orgId}<br>
+                    Widget: ${config.widgetId}<br>
+                    Name: ${config.config?.widgetName || 'Unknown'}</small>
+                `;
+            } else {
+                statusDiv.className = 'integration-status inactive';
+                statusDiv.innerHTML = '❌ No integration loaded - Paste your Zunoki widget code to get started';
+            }
+        }
+
+        function reloadWidgetScript(code) {
+            // Extract script src from the integration code
+            const scriptMatch = code.match(/src=['"]([^'"]+zunoki-widget\.js[^'"]*)['"]/);
+
+            if (scriptMatch) {
+                const scriptSrc = scriptMatch[1];
+
+                // Remove existing widget script
+                const existingScript = document.querySelector('script[src*="zunoki-widget.js"]');
+                if (existingScript) {
+                    existingScript.remove();
+                }
+
+                // Add new widget script
+                const script = document.createElement('script');
+                script.src = scriptSrc;
+                script.async = true;
+                document.head.appendChild(script);
+
+                showStatus('🔄 Widget script reloaded from: ' + scriptSrc, 'success');
+            }
         }
 
         function testConnection() {
@@ -466,9 +663,51 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            updateWidget();
+            loadSavedIntegration();
             showStatus('Zunoki AI-Powered Chat Widget test page loaded', 'success');
         });
+
+        function loadSavedIntegration() {
+            // Load previously saved integration if exists
+            const savedConfig = localStorage.getItem('zunoki_widget_config');
+            const savedCode = localStorage.getItem('zunoki_integration_code');
+
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    window.ZunokiWidget = config;
+                    updateIntegrationStatus(config);
+
+                    // Reload the widget script if we have the full code
+                    if (savedCode) {
+                        reloadWidgetScript(savedCode);
+                    }
+
+                    showStatus('✅ Loaded saved integration: ' + (config.config?.widgetName || 'Unknown'), 'success');
+                } catch (error) {
+                    console.error('Error loading saved integration:', error);
+                    localStorage.removeItem('zunoki_widget_config');
+                    localStorage.removeItem('zunoki_integration_code');
+                }
+            } else {
+                updateIntegrationStatus(null);
+            }
+
+            // Load saved visitor info
+            const savedName = localStorage.getItem('zunoki_visitor_name');
+            const savedEmail = localStorage.getItem('zunoki_visitor_email');
+
+            if (savedName) document.getElementById('visitorName').value = savedName;
+            if (savedEmail) document.getElementById('visitorEmail').value = savedEmail;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('integrationModal');
+            if (event.target === modal) {
+                closeIntegrationModal();
+            }
+        }
     </script>
 </body>
 </html>
