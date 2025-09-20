@@ -40,3 +40,42 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { type, name, configuration, status } = body;
+
+    // For now, return success with mock data
+    // In a real implementation, you would:
+    // 1. Get the authenticated user
+    // 2. Validate the integration data
+    // 3. Save to the database
+    // 4. Return the created integration
+
+    const mockIntegration = {
+      id: Math.random().toString(36).substr(2, 9),
+      type,
+      name,
+      configuration,
+      status: status || 'active',
+      created_at: new Date().toISOString(),
+      provider: configuration.provider || type
+    };
+
+    return NextResponse.json({
+      success: true,
+      integration: mockIntegration
+    });
+
+  } catch (error) {
+    console.error('Error creating messaging integration:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to create integration'
+      },
+      { status: 500 }
+    );
+  }
+}
